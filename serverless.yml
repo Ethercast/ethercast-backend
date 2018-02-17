@@ -12,6 +12,7 @@ provider:
 functions:
   auth:
     handler: auth.authorize
+
   list-subs:
     handler: handlers/list-subs.handle
     events:
@@ -20,14 +21,16 @@ functions:
           path: subscriptions
           authorizer: auth
           cors:
-            origins:
-              - '*'
+            origin: '*'
             headers:
               - Content-Type
               - X-Amz-Date
               - Authorization
               - X-Api-Key
               - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
   get-sub:
     handler: handlers/get-sub.handle
     events:
@@ -36,14 +39,16 @@ functions:
           path: subscriptions/{id}
           authorizer: auth
           cors:
-            origins:
-              - '*'
+            origin: '*'
             headers:
               - Content-Type
               - X-Amz-Date
               - Authorization
               - X-Api-Key
               - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
   post-sub:
     handler: handlers/post-sub.handle
     events:
@@ -52,14 +57,16 @@ functions:
           path: subscriptions
           authorizer: auth
           cors:
-            origins:
-              - '*'
+            origin: '*'
             headers:
               - Content-Type
               - X-Amz-Date
               - Authorization
               - X-Api-Key
               - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
   delete-sub:
     handler: handlers/delete-sub.handle
     events:
@@ -68,11 +75,12 @@ functions:
           path: subscriptions/{id}
           authorizer: auth
           cors:
-            origins:
-              - '*'
+            origin: '*'
             headers:
               - Content-Type
               - X-Amz-Date
               - Authorization
               - X-Api-Key
               - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
