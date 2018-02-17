@@ -77,7 +77,15 @@ export default async function createSubscriptions(sub: Subscription): Promise<st
 
   return Promise.all(
     topics.map(
-      async (TopicArn) => {
+      async (topicName) => {
+        const { TopicArn } = await sns.createTopic({
+          Name: topicName
+        }).promise();
+
+        if (!TopicArn) {
+          throw new Error('TopicArn failed to create with name: ' + topicName);
+        }
+
         const result = await sns.subscribe(
           {
             Endpoint: `https://api.if-eth.com/handle-event?subscription_id=${sub.id}`,
@@ -87,7 +95,7 @@ export default async function createSubscriptions(sub: Subscription): Promise<st
         ).promise();
 
         if (!result.SubscriptionArn) {
-          throw new Error('failed to subscribe to topic');
+          throw new Error('failed to subscribe to topic: ' + topicName);
         }
 
         return result.SubscriptionArn;
