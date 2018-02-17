@@ -4,10 +4,29 @@ import uuid = require('uuid');
 const { SUBSCRIPTIONS_TABLE } = process.env;
 const USER_INDEX = 'ByUser';
 
-interface Condition {
-  type: 'address' | 'topic0' | 'topic1' | 'topic2' | 'topic3';
+export enum ConditionType {
+  address = 'address',
+  topic0 = 'topic0',
+  topic1 = 'topic1',
+  topic2 = 'topic2',
+  topic3 = 'topic3'
+}
+
+// how we sort the topics in the hashable arrays
+export const CONDITION_SORT_ORDER: {[type in ConditionType]: number} = {
+  address: 0,
+  topic0: 1,
+  topic1: 2,
+  topic2: 3,
+  topic3: 4,
+};
+
+export interface Condition {
+  type: ConditionType;
   value: string; // hex value of the type
 }
+
+export type SubscriptionLogic = Array<Array<Condition>>;
 
 enum Status {
   active = 'active',
@@ -22,7 +41,7 @@ export interface Subscription {
   description?: string; // reasonable max length - longer
 
   // Conditions in the top-level array are AND-ed, conditions in nested arrays are OR-ed
-  logic: Array<Array<Condition>>;
+  logic: SubscriptionLogic;
 }
 
 type Diff<T extends string, U extends string> = ({[P in T]: P } & {[P in U]: never } & { [x: string]: never })[T];
