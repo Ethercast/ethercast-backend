@@ -52,9 +52,9 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
   }
 
   // validate the request
-  const result = Joi.validate(body, SubscriptionPostRequest);
+  const validationResult = Joi.validate(parsed, SubscriptionPostRequest);
 
-  if (result.error) {
+  if (validationResult.error) {
     cb(
       null,
       {
@@ -63,15 +63,15 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
           'Access-Control-Allow-Origin': '*', // Required for CORS support to work
           'Access-Control-Allow-Credentials': true // Required for cookies, authorization headers with HTTPS
         },
-        body: JSON.stringify(result.error)
+        body: JSON.stringify(validationResult.error)
       }
     );
     return;
   }
 
-  const sub: Subscription = result as any;
+  const subscription = validationResult.value as Subscription;
 
-  const saved = await crud.create(sub, user);
+  const saved = await crud.create(subscription, user);
 
   cb(
     null,
