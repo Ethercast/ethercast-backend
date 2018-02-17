@@ -13,11 +13,12 @@ functions:
   auth:
     handler: auth.authorize
   hello:
-    handler: handler.hello
+    handler: handlers/list-subs.handle
     events:
       - http:
           method: get
-          path: hello
+          path: subscriptions
+          authorizer: auth
           cors:
             origins:
               - '*'

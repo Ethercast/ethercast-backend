@@ -11,7 +11,10 @@ const generatePolicy = (principalId: any, effect: any, resource: any) => {
   const authResponse: any = {};
   authResponse.principalId = principalId;
   if (effect && resource) {
-    const policyDocument: any = {};
+    const policyDocument: any = {
+      Version: '2012-10-17',
+      Statement: []
+    };
     policyDocument.Version = '2012-10-17';
     policyDocument.Statement = [];
     const statementOne: any = {};
@@ -37,7 +40,7 @@ module.exports.authorize = (event: any, context: any, cb: any) => {
       (error: any, response: any, body: any) => {
         if (error || response.statusCode !== 200) {
           console.log('Request error:', error);
-          cb('Unauthorized');
+          cb('Unauthorized: internal server error');
         }
 
         // Based on the JSON of `jwks` create a Pem:
@@ -53,7 +56,7 @@ module.exports.authorize = (event: any, context: any, cb: any) => {
         jwk.verify(token, pem, { issuer: iss }, (err: any, decoded: any) => {
           if (err) {
             console.log('Unauthorized user:', err.message);
-            cb('Unauthorized');
+            cb('Unauthorized: invalid token');
           } else {
             cb(null, generatePolicy(decoded.sub, 'Allow', event.methodArn));
           }
@@ -61,6 +64,6 @@ module.exports.authorize = (event: any, context: any, cb: any) => {
       });
   } else {
     console.log('No authorizationToken found in the header.');
-    cb('Unauthorized');
+    cb('Unauthorized: must include authorization token in the header');
   }
 };
