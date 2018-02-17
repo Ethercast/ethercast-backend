@@ -73,6 +73,8 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
 
   const saved = await crud.create(subscription, user);
 
+  // TODO: process the logic to add subscribers to all SNS topics
+
   cb(
     null,
     {

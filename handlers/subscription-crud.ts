@@ -1,4 +1,4 @@
-import { DynamoDB } from 'aws-sdk';
+import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import uuid = require('uuid');
 
 const { SUBSCRIPTIONS_TABLE } = process.env;
@@ -9,10 +9,16 @@ interface Condition {
   value: string; // hex value of the type
 }
 
+enum Status {
+  active = 'active',
+  deactivated = 'deactivated'
+}
+
 export interface Subscription {
   id: string; // uuid v4
   user: string;
   name: string; // reasonable max length
+  status: Status;
   description?: string; // reasonable max length - longer
 
   // Conditions in the top-level array are AND-ed, conditions in nested arrays are OR-ed
@@ -22,10 +28,10 @@ export interface Subscription {
 type Diff<T extends string, U extends string> = ({[P in T]: P } & {[P in U]: never } & { [x: string]: never })[T];
 type Omit<T, K extends keyof T> = Pick<T, Diff<keyof T, K>>;
 
-const client = new DynamoDB.DocumentClient();
+const client = new DocumentClient();
 
 export default class SubscriptionCrud {
-  async create(subscription: Omit<Subscription, 'id' | 'user'>, user: string): Promise<Subscription> {
+  async create(subscription: Omit<Subscription, 'id' | 'user' | 'status'>, user: string): Promise<Subscription> {
     console.log('creating subscription', subscription);
 
     const id = uuid.v4();
@@ -35,7 +41,8 @@ export default class SubscriptionCrud {
       Item: {
         ...subscription,
         id,
-        user
+        user,
+        status: Status.active
       }
     }).promise();
 
@@ -54,6 +61,22 @@ export default class SubscriptionCrud {
     }).promise();
 
     return Item as Subscription;
+  }
+
+  async deactivate(id: string): Promise<Subscription> {
+    console.log('DEACTIVATING subscription with ID', id);
+
+    const sub = await this.get(id);
+
+    await client.put({
+      TableName: SUBSCRIPTIONS_TABLE,
+      Item: {
+        ...sub,
+        status: Status.deactivated
+      }
+    }).promise();
+
+    return this.get(id);
   }
 
   async delete(id: string): Promise<void> {

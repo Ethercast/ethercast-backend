@@ -14,7 +14,9 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
 
     const { id } = (data as any).body;
 
-    await crud.delete(id);
+    await crud.deactivate(id);
+
+    // TODO: remove subscribers from the SNS topics
 
     cb(
       null,
