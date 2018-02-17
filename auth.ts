@@ -27,6 +27,16 @@ const generatePolicy = (principalId: string) => {
 module.exports.authorize = (event: any, context: any, cb: any): void => {
   console.log('Auth function invoked');
 
+  // call when the user is not authenticated
+  function unauthorized() {
+    cb('Unauthorized');
+  }
+
+  // call when the user is authenticated
+  function authorized(user: string) {
+    cb(null, generatePolicy(user));
+  }
+
   if (event.authorizationToken) {
     // Remove 'bearer ' from token:
     const token = event.authorizationToken.substring(7);
@@ -37,7 +47,7 @@ module.exports.authorize = (event: any, context: any, cb: any): void => {
       (error, response, body) => {
         if (error || response.statusCode !== 200) {
           console.log('Request error:', error);
-          cb('Unauthorized: internal server error');
+          unauthorized();
         }
 
         // Based on the JSON of `jwks` create a Pem:
@@ -51,18 +61,17 @@ module.exports.authorize = (event: any, context: any, cb: any): void => {
         // Verify the token:
         jwk.verify(token, pem, { issuer }, (err, decodedJwt) => {
           if (err) {
-            console.log('Unauthorized user:', err.message);
-            cb('Unauthorized: invalid token');
+            console.log('Unauthorized user:', err);
+            unauthorized();
           } else {
             const { sub } = decodedJwt as any;
             console.log(`Authorized user: ${sub}`);
-            cb(null, generatePolicy(sub));
+            authorized(sub);
           }
         });
-
       });
   } else {
     console.log('No authorizationToken found in the header.');
-    cb('Unauthorized: must include authorization token in the header');
+    unauthorized();
   }
 };
