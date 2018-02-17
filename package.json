@@ -9,7 +9,7 @@
   "devDependencies": {
     "@types/aws-lambda": "0.0.22",
     "@types/jsonwebtoken": "^7.2.5",
-    "@types/node": "^8.0.57",
+    "@types/node": "^6.0.101",
     "@types/request": "^2.47.0",
     "jsonwebtoken": "^8.1.1",
     "jwk-to-pem": "^1.2.6",
