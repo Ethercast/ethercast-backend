@@ -11,11 +11,11 @@ import _ = require('underscore');
 const sns = new SNS();
 
 export function getConditionCombinations(andConditions: SubscriptionLogic): Array<Array<Condition>> {
-  let opts: Array<Array<Condition>> = [];
-
   if (andConditions.length === 1) {
     return andConditions;
   }
+
+  let allCombinations: Array<Array<Condition>> = [];
 
   andConditions.forEach(
     (orConditions, andIndex) => {
@@ -26,7 +26,7 @@ export function getConditionCombinations(andConditions: SubscriptionLogic): Arra
         (condition, orIndex) => {
 
           const options = getConditionCombinations(withoutIndex);
-          opts = opts.concat(
+          allCombinations = allCombinations.concat(
             options.map(option => ([condition, ...option]))
           );
         }
@@ -34,7 +34,7 @@ export function getConditionCombinations(andConditions: SubscriptionLogic): Arra
     }
   );
 
-  return opts;
+  return allCombinations;
 }
 
 export function getSortedAndCombinations(conditionCombos: Array<Array<Condition>>): Array<Array<string>> {
