@@ -22,11 +22,14 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
   let sub: Subscription;
 
   try {
+    console.log('attempting to parse subscription');
     sub = JSON.parse(body);
   } catch (error) {
     cb(error);
     return;
   }
+
+  console.log('creating subscription', sub);
 
   const saved = await crud.create(sub, user);
 

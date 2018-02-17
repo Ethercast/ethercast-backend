@@ -26,6 +26,8 @@ const client = new DynamoDB.DocumentClient();
 
 export default class SubscriptionCrud {
   async create(subscription: Omit<Subscription, 'id' | 'user'>, user: string): Promise<Subscription> {
+    console.log('creating subscription', subscription);
+
     const id = uuid.v4();
 
     const result = await client.put({
@@ -41,6 +43,8 @@ export default class SubscriptionCrud {
   }
 
   async get(id: string, ConsistentRead: boolean = true): Promise<Subscription> {
+    console.log('getting subscription with ID', id);
+
     const { Item } = await client.get({
       TableName: SUBSCRIPTIONS_TABLE,
       Key: {
@@ -53,6 +57,8 @@ export default class SubscriptionCrud {
   }
 
   async delete(id: string): Promise<void> {
+    console.log('DELETING subscription with ID', id);
+
     await client.delete({
       TableName: SUBSCRIPTIONS_TABLE,
       Key: {
@@ -62,6 +68,8 @@ export default class SubscriptionCrud {
   }
 
   async list(user: string): Promise<Subscription[]> {
+    console.log('listing subscriptions for user', user);
+
     const { Items } = await client.query({
       TableName: SUBSCRIPTIONS_TABLE,
       IndexName: USER_INDEX,
