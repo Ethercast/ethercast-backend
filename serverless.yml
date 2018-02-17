@@ -7,6 +7,7 @@ plugins:
 
 provider:
   name: aws
+  region: us-east-1
   runtime: nodejs6.10
   environment: # service wide environment variables
     SUBSCRIPTIONS_TABLE: ${self:service}-${opt:stage, self:provider.stage}
@@ -22,6 +23,12 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:us-east-1:*:*"
+    - Effect: Allow
+      Action: # Gives permission to create sns topics
+        - sns:CreateTopic
+        - sns:Subscribe
+        - sns:Unsubscribe
+      Resource: "arn:aws:sns:us-east-1:*:*"
 
 functions:
   auth:
