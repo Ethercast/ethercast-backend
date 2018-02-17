@@ -11,6 +11,7 @@
     "@types/jsonwebtoken": "^7.2.5",
     "@types/node": "^6.0.101",
     "@types/request": "^2.47.0",
+    "aws-sdk": "^2.197.0",
     "jsonwebtoken": "^8.1.1",
     "jwk-to-pem": "^1.2.6",
     "request": "^2.83.0",

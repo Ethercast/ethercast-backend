@@ -12,15 +12,16 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
         },
         body: JSON.stringify(
           {
-            id: 'sub-1',
-            name: 'My subscription',
+            id: 'uuid',
+            name: 'string',
+            description: 'string',
             topics: [
               [
                 { type: 'address', value: '0x000' },
                 { type: 'topic', value: '0x000' }
               ],
               [
-                { type: '' }
+                { type: 'argument-0', value: '0x0000' }
               ]
             ]
           }
