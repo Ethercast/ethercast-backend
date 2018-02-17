@@ -8,11 +8,13 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "0.0.22",
+    "@types/joi": "^13.0.5",
     "@types/jsonwebtoken": "^7.2.5",
     "@types/node": "^6.0.101",
     "@types/request": "^2.47.0",
     "@types/uuid": "^3.4.3",
     "aws-sdk": "^2.197.0",
+    "joi": "^13.1.2",
     "jsonwebtoken": "^8.1.1",
     "jwk-to-pem": "^1.2.6",
     "request": "^2.83.0",

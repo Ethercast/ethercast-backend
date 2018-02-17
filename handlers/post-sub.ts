@@ -1,5 +1,28 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import { crud, Subscription } from './subscription-crud';
+import * as Joi from 'joi';
+
+export const SubscriptionPostRequest = Joi.object().keys({
+  name: Joi.string().alphanum().min(3).max(128).required(),
+  description: Joi.string(),
+  logic: Joi.array()
+    .items(
+      Joi.array()
+        .items(
+          Joi.object().keys({
+            type: Joi.string().only('address', 'topic0', 'topic1', 'topic2', 'topic3').required(),
+            value: Joi.string().hex().required()
+          })
+        )
+        .min(1)
+        .max(10)
+    )
+    .required()
+    // at least 1 rule
+    .min(1)
+    // no more than 100 rules
+    .max(10)
+});
 
 export const handle: Handler = async (event: APIGatewayEvent, context: Context, cb?: Callback) => {
   if (!cb) {
@@ -19,17 +42,34 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
     return;
   }
 
-  let sub: Subscription;
-
+  let parsed: object;
   try {
     console.log('attempting to parse subscription');
-    sub = JSON.parse(body);
+    parsed = JSON.parse(body);
   } catch (error) {
     cb(error);
     return;
   }
 
-  console.log('creating subscription', sub);
+  // validate the request
+  const result = Joi.validate(body, SubscriptionPostRequest);
+
+  if (result.error) {
+    cb(
+      null,
+      {
+        statusCode: 422,
+        headers: {
+          'Access-Control-Allow-Origin': '*', // Required for CORS support to work
+          'Access-Control-Allow-Credentials': true // Required for cookies, authorization headers with HTTPS
+        },
+        body: JSON.stringify(result.error)
+      }
+    );
+    return;
+  }
+
+  const sub: Subscription = result as any;
 
   const saved = await crud.create(sub, user);
 
