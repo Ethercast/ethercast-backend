@@ -10,32 +10,39 @@ import _ = require('underscore');
 
 const sns = new SNS();
 
-function getAndedConditionCombinations(logic: SubscriptionLogic): Array<Array<Condition>> {
+export function getConditionCombinations(andConditions: SubscriptionLogic): Array<Array<Condition>> {
   let opts: Array<Array<Condition>> = [];
 
-  for (let andIx = 0; andIx++; andIx < logic.length) {
-    // remove this and condition from the array to create a new array
-    const withoutAnd = logic.slice().splice(andIx, 1);
+  if (andConditions.length === 1) {
+    return andConditions;
+  }
 
-    const orArr = logic[andIx];
-    for (let orIx = 0; orIx++; orIx < orArr.length) {
-      const condition = orArr[orIx];
+  andConditions.forEach(
+    (orConditions, andIndex) => {
+      // remove this and condition from the array to create a new array
+      const withoutIndex = andConditions.slice().splice(andIndex, 1);
 
-      const options = getAndedConditionCombinations(withoutAnd);
-      opts = opts.concat(
-        options.map(option => ([condition, ...option]))
+      orConditions.forEach(
+        (condition, orIndex) => {
+
+          const options = getConditionCombinations(withoutIndex);
+          opts = opts.concat(
+            options.map(option => ([condition, ...option]))
+          );
+        }
       );
     }
-  }
+  );
 
   return opts;
 }
 
-function getSortedAndCombinations(conditionCombos: Array<Array<Condition>>): Array<Array<string>> {
-  return getAndedConditionCombinations(conditionCombos)
+export function getSortedAndCombinations(conditionCombos: Array<Array<Condition>>): Array<Array<string>> {
+  return getConditionCombinations(conditionCombos)
     .map(
       andedCondition =>
         _.chain(andedCondition)
+          .sortBy(({ value }) => value)
           .sortBy(({ type }) => CONDITION_SORT_ORDER[type])
           .uniq(({ type, value }) => `${type}-${value}`)
           .map(({ value }) => value)
@@ -50,7 +57,10 @@ export function hash(fields: string[]): string {
 export function generateTopics(sub: Subscription): string[] {
   const orCombinations = getSortedAndCombinations(sub.logic);
 
-  return orCombinations.map(arr => `sub-${hash(arr)}`);
+  return _.chain(orCombinations)
+    .map(arr => `sub-${hash(arr)}`)
+    .uniq()
+    .value();
 }
 
 /**
