@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "strictNullChecks": true,
+    "allowSyntheticDefaultImports": false,
+    "sourceMap": true,
+    "lib": [
+      "es5",
+      "es2015.promise"
+    ]
+  }
+}
