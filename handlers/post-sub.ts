@@ -3,15 +3,15 @@ import { crud, Subscription } from './subscription-crud';
 import * as Joi from 'joi';
 
 export const SubscriptionPostRequest = Joi.object().keys({
-  name: Joi.string().alphanum().min(3).max(128).required(),
-  description: Joi.string(),
+  name: Joi.string().min(3).max(256).required(),
+  description: Joi.string().max(1024),
   logic: Joi.array()
     .items(
       Joi.array()
         .items(
           Joi.object().keys({
             type: Joi.string().only('address', 'topic0', 'topic1', 'topic2', 'topic3').required(),
-            value: Joi.string().hex().required()
+            value: Joi.string().regex(/^0x[0-9a-f]{64}$/).required()
           })
         )
         .min(1)
