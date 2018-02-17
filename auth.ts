@@ -10,6 +10,9 @@ const issuer = 'https://if-eth.auth0.com/';
 const generatePolicy = (principalId: string) => {
   return {
     principalId,
+    context: {
+      user: principalId
+    },
     policyDocument: {
       Version: '2012-10-17',
       Statement: [

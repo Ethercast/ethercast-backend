@@ -1,4 +1,4 @@
-import * as AWS from 'aws-sdk';
+import { DynamoDB } from 'aws-sdk';
 import uuid = require('uuid');
 
 const { SUBSCRIPTIONS_TABLE } = process.env;
@@ -22,7 +22,7 @@ export interface Subscription {
 type Diff<T extends string, U extends string> = ({[P in T]: P } & {[P in U]: never } & { [x: string]: never })[T];
 type Omit<T, K extends keyof T> = Pick<T, Diff<keyof T, K>>;
 
-const client = new AWS.DynamoDB.DocumentClient();
+const client = new DynamoDB.DocumentClient();
 
 export default class SubscriptionCrud {
   async create(subscription: Omit<Subscription, 'id' | 'user'>, user: string): Promise<Subscription> {

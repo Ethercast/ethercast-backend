@@ -6,7 +6,9 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
     throw new Error('invalid caller');
   }
 
-  const { requestContext: { identity: { user } }, pathParameters } = event;
+  const { pathParameters } = event;
+  const { requestContext: { authorizer: { user } } } = event as any;
+
   if (!user) {
     cb(new Error('invalid user on request'));
     return;
