@@ -1,6 +1,6 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import { handle as getHandler } from './get-sub';
-import { crud } from './subscription-crud';
+import { crud } from './util/subscription-crud';
 
 export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: Callback) => {
   if (!cb) {

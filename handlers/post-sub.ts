@@ -1,6 +1,7 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
-import { crud, Subscription } from './subscription-crud';
+import { crud, Subscription } from './util/subscription-crud';
 import * as Joi from 'joi';
+import subscribeToTopics from './util/subscribe-to-topics';
 
 export const SubscriptionPostRequest = Joi.object().keys({
   name: Joi.string().min(3).max(256).required(),
@@ -83,6 +84,7 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
   const saved = await crud.create(subscription, user);
 
   // TODO: process the logic to add subscribers to all SNS topics
+  const snsSubs = await subscribeToTopics(saved);
 
   cb(
     null,
