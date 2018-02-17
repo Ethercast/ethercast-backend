@@ -2,37 +2,8 @@ import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import { crud, Subscription } from './util/subscription-crud';
 import * as Joi from 'joi';
 import subscribeToTopics from './util/subscribe-to-topics';
-
-export const SubscriptionPostRequest = Joi.object().keys({
-  name: Joi.string().min(3).max(256).required(),
-  description: Joi.string().max(1024),
-  logic: Joi.array()
-    .items(
-      Joi.array()
-        .items(
-          Joi.alternatives(
-            [
-              Joi.object().keys({
-                type: Joi.string().only('address', 'topic0', 'topic1', 'topic2', 'topic3').required(),
-                value: Joi.when(
-                  Joi.ref('type'),
-                  {
-                    is: 'address',
-                    then: Joi.string().regex(/^0x[0-9a-fA-F]{40}$/).required(),
-                    otherwise: Joi.string().regex(/^0x[0-9a-f]{64}$/).required()
-                  }
-                )
-              })
-            ]
-          )
-        )
-        .min(1)
-        .max(10)
-    )
-    .required()
-    .min(1)
-    .max(10)
-});
+import { SubscriptionPostRequest } from './models';
+import uuid = require('uuid');
 
 export const handle: Handler = async (event: APIGatewayEvent, context: Context, cb?: Callback) => {
   if (!cb) {
@@ -81,10 +52,9 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
 
   const subscription = validationResult.value as Subscription;
 
-  const saved = await crud.create(subscription, user);
-
-  // TODO: process the logic to add subscribers to all SNS topics
-  const snsSubs = await subscribeToTopics(saved);
+  const id = uuid.v4();
+  const snsSubs = await subscribeToTopics(id, subscription.logic, subscription.webhookUrl);
+  const saved = await crud.create(id, subscription, user, snsSubs);
 
   cb(
     null,

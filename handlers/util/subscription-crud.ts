@@ -1,5 +1,4 @@
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
-import uuid = require('uuid');
 
 const { SUBSCRIPTIONS_TABLE } = process.env;
 const USER_INDEX = 'ByUser';
@@ -35,8 +34,11 @@ enum Status {
 
 export interface Subscription {
   id: string; // uuid v4
+  timestamp: number;
   user: string;
   name: string; // reasonable max length
+  webhookUrl: string;
+  subscriptionArns: string[];
   status: Status;
   description?: string; // reasonable max length - longer
 
@@ -50,10 +52,8 @@ type Omit<T, K extends keyof T> = Pick<T, Diff<keyof T, K>>;
 const client = new DocumentClient();
 
 export default class SubscriptionCrud {
-  async create(subscription: Omit<Subscription, 'id' | 'user' | 'status'>, user: string): Promise<Subscription> {
+  async create(id: string, subscription: Omit<Subscription, 'id' | 'user' | 'status' | 'subscriptionArns' | 'timestamp'>, user: string, subscriptionArns: string[]): Promise<Subscription> {
     console.log('creating subscription', subscription);
-
-    const id = uuid.v4();
 
     const result = await client.put({
       TableName: SUBSCRIPTIONS_TABLE,
@@ -61,6 +61,8 @@ export default class SubscriptionCrud {
         ...subscription,
         id,
         user,
+        subscriptionArns,
+        timestamp: (new Date()).getTime(),
         status: Status.active
       }
     }).promise();

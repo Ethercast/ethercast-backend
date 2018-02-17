@@ -1,12 +1,8 @@
-import {
-  Condition,
-  CONDITION_SORT_ORDER,
-  Subscription,
-  SubscriptionLogic
-} from './subscription-crud';
+import { Condition, CONDITION_SORT_ORDER, SubscriptionLogic } from './subscription-crud';
 import * as SNS from 'aws-sdk/clients/sns';
 import * as shajs from 'sha.js';
 import _ = require('underscore');
+import qs = require('qs');
 
 const sns = new SNS();
 
@@ -54,8 +50,8 @@ export function hash(fields: string[]): string {
   return shajs('sha256').update(fields.join()).digest('hex');
 }
 
-export function generateTopics(sub: Subscription): string[] {
-  const orCombinations = getSortedAndCombinations(sub.logic);
+export function generateTopics(logic: SubscriptionLogic): string[] {
+  const orCombinations = getSortedAndCombinations(logic);
 
   return _.chain(orCombinations)
     .map(arr => `sub-${hash(arr)}`)
@@ -63,15 +59,10 @@ export function generateTopics(sub: Subscription): string[] {
     .value();
 }
 
-/**
- * Given a subscription, subscribe to all the relevant SNS topics
- * @param {Subscription} sub the dynamo subscription record
- * @returns {Promise<string[]>} resolves to array of subscription ARNs
- */
-export default async function createSubscriptions(sub: Subscription): Promise<string[]> {
-  console.log(`generating topics for subscription`, sub);
+export default async function createSubscriptions(subscriptionId: string, logic: SubscriptionLogic, url: string): Promise<string[]> {
+  console.log(`generating topics for subscription`, subscriptionId);
 
-  const topics = generateTopics(sub);
+  const topics = generateTopics(logic);
 
   console.log(`attempting to subscribe to ${topics.length} topics`);
 
@@ -88,7 +79,10 @@ export default async function createSubscriptions(sub: Subscription): Promise<st
 
         const result = await sns.subscribe(
           {
-            Endpoint: `https://api.if-eth.com/handle-event?subscription_id=${sub.id}`,
+            Endpoint: `https://api.if-eth.com/handle-event?${qs.stringify({
+              subscription_id: subscriptionId,
+              webhook_url: url
+            })}`,
             Protocol: 'https',
             TopicArn
           }
