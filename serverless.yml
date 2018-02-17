@@ -12,12 +12,60 @@ provider:
 functions:
   auth:
     handler: auth.authorize
-  hello:
+  list-subs:
     handler: handlers/list-subs.handle
     events:
       - http:
           method: get
           path: subscriptions
+          authorizer: auth
+          cors:
+            origins:
+              - '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+  get-sub:
+    handler: handlers/get-sub.handle
+    events:
+      - http:
+          method: get
+          path: subscriptions/{id}
+          authorizer: auth
+          cors:
+            origins:
+              - '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+  post-sub:
+    handler: handlers/post-sub.handle
+    events:
+      - http:
+          method: post
+          path: subscriptions
+          authorizer: auth
+          cors:
+            origins:
+              - '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+  delete-sub:
+    handler: handlers/delete-sub.handle
+    events:
+      - http:
+          method: post
+          path: subscriptions/{id}
           authorizer: auth
           cors:
             origins:
