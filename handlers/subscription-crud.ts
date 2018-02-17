@@ -65,9 +65,12 @@ export default class SubscriptionCrud {
     const { Items } = await client.query({
       TableName: SUBSCRIPTIONS_TABLE,
       IndexName: USER_INDEX,
-      KeyConditionExpression: 'user = :user',
+      KeyConditionExpression: '#user = :user',
       ExpressionAttributeValues: {
         ':user': user
+      },
+      ExpressionAttributeNames: {
+        '#user': 'user'
       }
     }).promise();
 
