@@ -19,7 +19,10 @@ functions:
       - http:
           method: get
           path: subscriptions
-          authorizer: auth
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
           cors:
             origin: '*'
             headers:
@@ -37,7 +40,10 @@ functions:
       - http:
           method: get
           path: subscriptions/{id}
-          authorizer: auth
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
           cors:
             origin: '*'
             headers:
@@ -55,7 +61,10 @@ functions:
       - http:
           method: post
           path: subscriptions
-          authorizer: auth
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
           cors:
             origin: '*'
             headers:
@@ -73,7 +82,10 @@ functions:
       - http:
           method: post
           path: subscriptions/{id}
-          authorizer: auth
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
           cors:
             origin: '*'
             headers:
