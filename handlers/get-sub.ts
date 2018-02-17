@@ -1,31 +1,44 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
+import { crud } from './subscription-crud';
 
-export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: Callback) => {
-  if (cb) {
-    cb(
-      null,
-      {
-        statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*', // Required for CORS support to work
-          'Access-Control-Allow-Credentials': true // Required for cookies, authorization headers with HTTPS
-        },
-        body: JSON.stringify(
-          {
-            id: 'sub-1',
-            name: 'My subscription',
-            topics: [
-              [
-                { type: 'address', value: '0x000' },
-                { type: 'topic', value: '0x000' }
-              ],
-              [
-                { type: '' }
-              ]
-            ]
-          }
-        )
-      }
-    );
+export const handle: Handler = async (event: APIGatewayEvent, context: Context, cb?: Callback) => {
+  if (!cb) {
+    throw new Error('invalid caller');
   }
+
+  const { requestContext: { identity: { user } }, pathParameters } = event;
+  if (!user) {
+    cb(new Error('invalid user on request'));
+    return;
+  }
+
+  if (!pathParameters) {
+    cb(new Error('missing path parameter id'));
+    return;
+  }
+
+  const { id } = pathParameters;
+  if (!id) {
+    cb(new Error('missing path parameter id'));
+    return;
+  }
+
+  const subscription = await crud.get(id);
+
+  if (subscription.user !== user) {
+    cb(new Error('invalid user or invalid sub id'));
+    return;
+  }
+
+  cb(
+    null,
+    {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*', // Required for CORS support to work
+        'Access-Control-Allow-Credentials': true // Required for cookies, authorization headers with HTTPS
+      },
+      body: JSON.stringify(subscription)
+    }
+  );
 };
