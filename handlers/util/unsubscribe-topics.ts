@@ -12,7 +12,7 @@ export default async function unsubscribeTopics(subscriptionId: string): Promise
         // unsubscribe from the topic
         await sns.unsubscribe({
           SubscriptionArn: subscriptionArn
-        });
+        }).promise();
 
         // then remove it
         await crud.removeSubscription(subscriptionArn);
