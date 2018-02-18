@@ -9,44 +9,43 @@ import * as qs from 'qs';
 
 const sns = new SNS();
 
-export function getConditionCombinations(andConditions: SubscriptionLogic): Array<Array<Condition>> {
-  if (andConditions.length === 1) {
-    return andConditions;
+export function getCombinations(logic: SubscriptionLogic, child = false): Array<Array<Condition>> {
+  if (logic.length === 0) {
+    return [];
+  }
+  if (logic.length === 1) {
+    // these are or-ed conditions - break them apart
+    return logic[0].map(condition => [condition]);
   }
 
-  let allCombinations: Array<Array<Condition>> = [];
+  let combinations: Array<Array<Condition>> = [];
 
-  andConditions.forEach(
-    (orConditions, andIndex) => {
-      // remove this and condition from the array to create a new array
-      const withoutIndex = andConditions.slice().splice(andIndex, 1);
+  const andLogic = logic; // for clarity
 
-      orConditions.forEach(
-        (condition, orIndex) => {
+  const orLogic = andLogic.splice(0, 1)[0];
+  orLogic.forEach(condition => {
+    const childLogic = andLogic.slice();
+    getCombinations(childLogic, true).forEach(childCombo => {
+      combinations.push([condition, ...childCombo]);
+    });
+  });
 
-          const options = getConditionCombinations(withoutIndex);
-          allCombinations = allCombinations.concat(
-            options.map(option => ([condition, ...option]))
-          );
-        }
-      );
-    }
-  );
-
-  return allCombinations;
+  return combinations;
 }
 
-export function getSortedAndCombinations(conditionCombos: Array<Array<Condition>>): Array<Array<string>> {
-  return getConditionCombinations(conditionCombos)
-    .map(
-      andedCondition =>
-        _.chain(andedCondition)
-          .sortBy(({ value }) => value)
-          .sortBy(({ type }) => CONDITION_SORT_ORDER[type])
-          .uniq(({ type, value }) => `${type}-${value}`)
-          .map(({ value }) => value)
-          .value()
-    );
+export function getSortedCombinations(logic: SubscriptionLogic): Array<Array<string>> {
+  const combinations = getCombinations(logic);
+
+  // sort combinations internally (by condition type)
+  return _.map(combinations, combination =>
+    _.chain(combination)
+      .filter((combination) => combination.length)
+      .sortBy(({ value }) => value)
+      .sortBy(({ type }) => CONDITION_SORT_ORDER[type])
+      .uniq(({ type, value }) => `${type}-${value}`)
+      .map(({ value }) => value)
+      .value()
+  );
 }
 
 export function hash(fields: string[]): string {
@@ -54,9 +53,10 @@ export function hash(fields: string[]): string {
 }
 
 export function generateTopics(logic: SubscriptionLogic): string[] {
-  const orCombinations = getSortedAndCombinations(logic);
+  const combinations = getSortedCombinations(logic);
 
-  return _.chain(orCombinations)
+  // hash combinations and remove duplicates
+  return _.chain(combinations)
     .map(arr => `sub-${hash(arr)}`)
     .uniq()
     .value();

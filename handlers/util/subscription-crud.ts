@@ -26,6 +26,7 @@ export interface Condition {
   value: string; // hex value of the type
 }
 
+// Conditions: the top-level arrays are AND-ed, nested arrays are OR-ed
 export type SubscriptionLogic = Array<Array<Condition>>;
 
 enum Status {
@@ -42,7 +43,6 @@ export interface Subscription {
   status: Status;
   description?: string; // reasonable max length - longer
 
-  // Conditions in the top-level array are AND-ed, conditions in nested arrays are OR-ed
   logic: SubscriptionLogic;
 }
 

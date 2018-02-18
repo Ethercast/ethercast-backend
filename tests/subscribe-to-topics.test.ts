@@ -1,16 +1,16 @@
-import { getConditionCombinations } from '../handlers/util/subscribe-to-topics';
+import { getCombinations } from '../handlers/util/subscribe-to-topics';
 import { expect } from 'chai';
 import { ConditionType } from '../handlers/util/subscription-crud';
 
-describe('getAndedConditionCombinations', () => {
+describe('getCombinations', () => {
   it('works with no elements', () => {
-    expect(getConditionCombinations([])).to.deep.eq([]);
+    expect(getCombinations([])).to.deep.eq([]);
   });
 
 
   it('works with one condition', () => {
     expect(
-      getConditionCombinations(
+      getCombinations(
         [
           [
             {
@@ -32,7 +32,7 @@ describe('getAndedConditionCombinations', () => {
 
   it('works with two and-ed conditions', () => {
     expect(
-      getConditionCombinations(
+      getCombinations(
         [
           [
             {
@@ -58,18 +58,109 @@ describe('getAndedConditionCombinations', () => {
           type: ConditionType.topic0,
           value: '0xb'
         }
+      ]
+    ]);
+  });
+
+  it('works with two or-ed conditions', () => {
+    expect(
+      getCombinations(
+        [
+          [
+            {
+              type: ConditionType.address,
+              value: '0xa'
+            },
+            {
+              type: ConditionType.topic0,
+              value: '0xb'
+            }
+          ]
+        ]
+      )
+    ).to.deep.eq([
+        [
+          {
+            type: ConditionType.address,
+            value: '0xa'
+          }
+        ],
+        [
+          {
+            type: ConditionType.topic0,
+            value: '0xb'
+          }
+        ]
+    ]);
+  });
+
+  it('works with two and-ed and two or-ed conditions', () => {
+    expect(
+      getCombinations(
+        [
+          [
+            {
+              type: ConditionType.address,
+              value: '0xa'
+            },
+            {
+              type: ConditionType.topic0,
+              value: '0xb'
+            }
+          ],
+          [
+            {
+              type: ConditionType.topic1,
+              value: '0xc'
+            },
+            {
+              type: ConditionType.topic1,
+              value: '0xd'
+            }
+          ]
+        ]
+      )
+    ).to.deep.eq([
+      [
+        {
+          type: ConditionType.address,
+          value: '0xa'
+        },
+        {
+          type: ConditionType.topic1,
+          value: '0xc'
+        }
       ],
-      // we have duplicates, that's fine.
+      [
+        {
+          type: ConditionType.address,
+          value: '0xa'
+        },
+        {
+          type: ConditionType.topic1,
+          value: '0xd'
+        }
+      ],
       [
         {
           type: ConditionType.topic0,
           value: '0xb'
         },
         {
-          type: ConditionType.address,
-          value: '0xa'
+          type: ConditionType.topic1,
+          value: '0xc'
         }
-      ]
+      ],
+      [
+        {
+          type: ConditionType.topic0,
+          value: '0xb'
+        },
+        {
+          type: ConditionType.topic1,
+          value: '0xd'
+        }
+      ],
     ]);
   });
 });
