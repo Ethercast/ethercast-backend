@@ -91,7 +91,7 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
                   webhookUrl,
                   subscriptionId
                 }),
-                MessageGroupId: '1'
+                MessageGroupId: subscriptionId
               }).promise();
 
               console.log(`message entered into queue: ${MessageId}, ${MD5OfMessageBody}`);
