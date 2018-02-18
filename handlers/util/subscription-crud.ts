@@ -1,7 +1,7 @@
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import uuid = require('uuid');
 
-const { SUBSCRIPTIONS_TABLE } = process.env;
+const { SUBSCRIPTIONS_TABLE, SUBSCRIPTIONS_ARN_TABLE } = process.env;
 const USER_INDEX = 'ByUser';
 
 export enum ConditionType {
@@ -99,6 +99,18 @@ export default class SubscriptionCrud {
     }).promise();
 
     return this.get(id);
+  }
+
+  async addSubscriptionArn(subscriptionId: string, subscriptionArn: string): Promise<void> {
+    console.log(`adding subscription arn to ${subscriptionId}: ${subscriptionArn}`);
+
+    await client.put({
+      TableName: SUBSCRIPTIONS_ARN_TABLE,
+      Item: {
+        subscriptionId,
+        subscriptionArn
+      }
+    }).promise();
   }
 
   async delete(id: string): Promise<void> {
