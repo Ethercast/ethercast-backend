@@ -33,7 +33,7 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
   }
 
   // validate the request
-  const validationResult = Joi.validate(parsed, SubscriptionPostRequest);
+  const validationResult = Joi.validate(parsed, SubscriptionPostRequest, { convert: true });
 
   if (validationResult.error) {
     cb(

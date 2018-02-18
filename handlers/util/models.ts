@@ -19,8 +19,8 @@ export const SubscriptionPostRequest = Joi.object().keys({
                   Joi.ref('type'),
                   {
                     is: 'address',
-                    then: Joi.string().regex(/^0x[0-9a-fA-F]{40}$/).required(),
-                    otherwise: Joi.string().regex(/^0x[0-9a-f]{64}$/).required()
+                    then: Joi.string().regex(/^0x[0-9a-fA-F]{40}$/).lowercase().required(),
+                    otherwise: Joi.string().regex(/^0x[0-9a-f]{64}$/).lowercase().required()
                   }
                 )
               })
