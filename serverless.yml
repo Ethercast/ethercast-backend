@@ -10,7 +10,7 @@ provider:
   region: us-east-1
   runtime: nodejs6.10
   environment: # service wide environment variables
-    SUBSCRIPTIONS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-v1
+    SUBSCRIPTIONS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-v2
   apiKeys:
     - SNS_WEBHOOK_API_KEY
   iamRoleStatements: # permissions for all of your functions can be set here
