@@ -1,5 +1,6 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import { crud } from './util/subscription-crud';
+import createResponse from './util/create-response';
 
 export const handle: Handler = async (event: APIGatewayEvent, context: Context, cb?: Callback) => {
   if (!cb) {
@@ -34,13 +35,6 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
 
   cb(
     null,
-    {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*', // Required for CORS support to work
-        'Access-Control-Allow-Credentials': true // Required for cookies, authorization headers with HTTPS
-      },
-      body: JSON.stringify(subscription)
-    }
+    createResponse(200, subscription)
   );
 };

@@ -1,8 +1,11 @@
-import { Condition, CONDITION_SORT_ORDER, SubscriptionLogic } from './subscription-crud';
+import {
+  Condition, CONDITION_SORT_ORDER, Subscription,
+  SubscriptionLogic
+} from './subscription-crud';
 import * as SNS from 'aws-sdk/clients/sns';
 import * as shajs from 'sha.js';
-import _ = require('underscore');
-import qs = require('qs');
+import * as _ from 'underscore';
+import * as qs from 'qs';
 
 const sns = new SNS();
 
@@ -59,14 +62,14 @@ export function generateTopics(logic: SubscriptionLogic): string[] {
     .value();
 }
 
-export default async function createSubscriptions(subscriptionId: string, logic: SubscriptionLogic, url: string): Promise<string[]> {
-  console.log(`generating topics for subscription`, subscriptionId);
+export default async function createSubscriptions(subscription: Subscription): Promise<void> {
+  console.log(`generating topics for subscription`, subscription.id);
 
-  const topics = generateTopics(logic);
+  const topics = generateTopics(subscription.logic);
 
-  console.log(`attempting to subscribe to ${topics.length} topics`);
+  console.log(`attempting to subscribe to ${topics.length} topics`, topics);
 
-  return Promise.all(
+  await Promise.all(
     topics.map(
       async (topicName) => {
         const { TopicArn } = await sns.createTopic({
@@ -80,8 +83,8 @@ export default async function createSubscriptions(subscriptionId: string, logic:
         const result = await sns.subscribe(
           {
             Endpoint: `https://api.if-eth.com/handle-event?${qs.stringify({
-              subscription_id: subscriptionId,
-              webhook_url: url
+              subscriptionId: subscription.id,
+              webhookUrl: subscription.webhookUrl
             })}`,
             Protocol: 'https',
             TopicArn
@@ -91,8 +94,6 @@ export default async function createSubscriptions(subscriptionId: string, logic:
         if (!result.SubscriptionArn) {
           throw new Error('failed to subscribe to topic: ' + topicName);
         }
-
-        return result.SubscriptionArn;
       }
     )
   );

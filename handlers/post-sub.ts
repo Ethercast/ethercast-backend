@@ -2,8 +2,8 @@ import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import { crud, Subscription } from './util/subscription-crud';
 import * as Joi from 'joi';
 import subscribeToTopics from './util/subscribe-to-topics';
-import { SubscriptionPostRequest } from './models';
-import uuid = require('uuid');
+import { SubscriptionPostRequest } from './util/models';
+import createResponse from './util/create-response';
 
 export const handle: Handler = async (event: APIGatewayEvent, context: Context, cb?: Callback) => {
   if (!cb) {
@@ -38,33 +38,17 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
   if (validationResult.error) {
     cb(
       null,
-      {
-        statusCode: 422,
-        headers: {
-          'Access-Control-Allow-Origin': '*', // Required for CORS support to work
-          'Access-Control-Allow-Credentials': true // Required for cookies, authorization headers with HTTPS
-        },
-        body: JSON.stringify(validationResult.error)
-      }
+      createResponse(422, validationResult.error)
     );
     return;
   }
 
   const subscription = validationResult.value as Subscription;
 
-  const id = uuid.v4();
-  const snsSubs = await subscribeToTopics(id, subscription.logic, subscription.webhookUrl);
-  const saved = await crud.create(id, subscription, user, snsSubs);
+  const saved = await crud.create(subscription, user);
 
-  cb(
-    null,
-    {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*', // Required for CORS support to work
-        'Access-Control-Allow-Credentials': true // Required for cookies, authorization headers with HTTPS
-      },
-      body: JSON.stringify(saved)
-    }
-  );
+  // create SNS topics for the subscription
+  await subscribeToTopics(saved);
+
+  cb(null, createResponse(200, saved));
 };

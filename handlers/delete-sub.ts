@@ -1,6 +1,7 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import { handle as getHandler } from './get-sub';
 import { crud } from './util/subscription-crud';
+import createResponse from './util/create-response';
 
 export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: Callback) => {
   if (!cb) {
@@ -16,17 +17,12 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
 
     await crud.deactivate(id);
 
-    // TODO: remove subscribers from the SNS topics
+    // TODO: remove subscriptions
+
 
     cb(
       null,
-      {
-        statusCode: 204,
-        headers: {
-          'Access-Control-Allow-Origin': '*', // Required for CORS support to work
-          'Access-Control-Allow-Credentials': true // Required for cookies, authorization headers with HTTPS
-        }
-      }
+      createResponse(204)
     );
   });
 };

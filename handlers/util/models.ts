@@ -1,7 +1,7 @@
 import * as Joi from 'joi';
 
 export const SubscriptionPostRequest = Joi.object().keys({
-  name: Joi.string().min(3).max(256).required(),
+  name: Joi.string().min(1).max(256).required(),
   description: Joi.string().max(1024),
   webhookUrl: Joi.string().uri({ scheme: 'https' }).required(),
   logic: Joi.array()
