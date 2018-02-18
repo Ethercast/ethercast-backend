@@ -43,7 +43,7 @@ describe('generateTopics', () => {
     ]);
   });
 
-  it('matches cryptokitty on topic0', () => {
+  it('matches cryptokitty on and condition between address and topic 0', () => {
     matches([
       [
         {
