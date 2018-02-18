@@ -51,7 +51,6 @@ export function getSortedConditionCombinationValues(logic: SubscriptionLogic): A
 }
 
 export function hash(fields: string[]): string {
-  console.log(fields);
   return shajs('sha256').update(fields.join()).digest('hex');
 }
 
