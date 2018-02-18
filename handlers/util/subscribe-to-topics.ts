@@ -36,7 +36,7 @@ export function getCombinations(logic: SubscriptionLogic): Array<Array<Condition
   return combinations;
 }
 
-export function getSortedCombinations(logic: SubscriptionLogic): Array<Array<string>> {
+export function getSortedConditionCombinationValues(logic: SubscriptionLogic): Array<Array<string>> {
   const combinations = getCombinations(logic);
 
   // sort combinations internally (by condition type)
@@ -55,7 +55,7 @@ export function hash(fields: string[]): string {
 }
 
 export function generateTopics(logic: SubscriptionLogic): string[] {
-  const combinations = getSortedCombinations(logic);
+  const combinations = getSortedConditionCombinationValues(logic);
 
   // hash combinations and remove duplicates
   return _.chain(combinations)
