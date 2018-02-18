@@ -49,7 +49,7 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
             try {
               const { SubscriptionArn } = await sns.confirmSubscription({
                 AuthenticateOnUnsubscribe: 'true',
-                Token: message.SubscriptionToken,
+                Token: message.Token,
                 TopicArn: message.TopicArn
               }).promise();
 
