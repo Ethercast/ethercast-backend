@@ -27,6 +27,7 @@ provider:
         - sns:CreateTopic
         - sns:Subscribe
         - sns:Unsubscribe
+        - sns:ConfirmSubscription
       Resource: "arn:aws:sns:us-east-1:*:*"
 
 functions:
