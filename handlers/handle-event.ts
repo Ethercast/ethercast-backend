@@ -83,7 +83,7 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
             const logEvent = JSON.parse(snsMessage.Message);
 
             try {
-              await sqs.sendMessage({
+              const { MessageId, MD5OfMessageBody } = await sqs.sendMessage({
                 MessageDeduplicationId: `${subscriptionId}-${logEvent.log.transactionHash}-${logEvent.log.transactionLogIndex}`,
                 QueueUrl: QUEUE_URL,
                 MessageBody: JSON.stringify({
@@ -92,7 +92,9 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
                   subscriptionId
                 }),
                 MessageGroupId: '1'
-              });
+              }).promise();
+
+              console.log(`message entered into queue: ${MessageId}, ${MD5OfMessageBody}`);
 
               cb(null, createResponse(204));
             } catch (error) {
