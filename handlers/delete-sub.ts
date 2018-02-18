@@ -22,7 +22,7 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
     // first unsubscribe all the topics
     await unsubscribeTopics(subscription.id);
 
-    console.log('deactivating id');
+    console.log('setting status of subscription to deactivated');
     // then deactivate it
     await crud.deactivate(subscription.id);
 
