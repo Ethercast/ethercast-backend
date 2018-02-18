@@ -30,6 +30,10 @@ provider:
         - sns:Unsubscribe
         - sns:ConfirmSubscription
       Resource: "arn:aws:sns:us-east-1:*:*"
+    - Effect: Allow
+      Action:
+        - sqs:SendMessage
+      Resource: "arn:aws:sqs:us-east-1:*:*" # arn:aws:sqs:region:account-id:queuename
 
 functions:
   auth:
