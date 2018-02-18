@@ -22,7 +22,7 @@ export function getCombinations(logic: SubscriptionLogic): Array<Array<Condition
 
   let combinations: Array<Array<Condition>> = [];
 
-  const andLogic = logic; // for clarity
+  const andLogic = logic.slice(); // for clarity
 
   const orLogic = andLogic.splice(0, 1)[0];
   orLogic.forEach(condition => {
@@ -51,6 +51,7 @@ export function getSortedConditionCombinationValues(logic: SubscriptionLogic): A
 }
 
 export function hash(fields: string[]): string {
+  console.log(fields);
   return shajs('sha256').update(fields.join()).digest('hex');
 }
 
