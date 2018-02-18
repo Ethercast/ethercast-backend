@@ -1,7 +1,7 @@
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import uuid = require('uuid');
 
-const { SUBSCRIPTIONS_TABLE, SUBSCRIPTIONS_ARN_TABLE } = process.env;
+const { SUBSCRIPTIONS_TABLE, SUBSCRIPTIONS_ARN_TABLE, WEBHOOKS_RECEIPTS_TABLE } = process.env;
 const USER_INDEX = 'ByUser';
 const SUBSCRIPTION_ID_INDEX = 'BySubscriptionId';
 
@@ -50,6 +50,14 @@ export interface Subscription {
 export interface SubscriptionArn {
   subscriptionId: string;
   subscriptionArn: string;
+}
+
+export interface Receipt {
+  id: string;
+  subscriptionId: string;
+  success: boolean;
+  timestamp: number;
+  webhookUrl: string;
 }
 
 type Diff<T extends string, U extends string> = ({[P in T]: P } & {[P in U]: never } & { [x: string]: never })[T];
@@ -143,6 +151,21 @@ export default class SubscriptionCrud {
         subscriptionArn
       }
     }).promise();
+  }
+
+  async listReceipts(subscriptionId: string): Promise<Receipt[]> {
+    console.log(`listing webhook receipts for ${subscriptionId}`);
+
+    const { Items } = await client.query({
+      TableName: WEBHOOKS_RECEIPTS_TABLE,
+      IndexName: SUBSCRIPTION_ID_INDEX,
+      KeyConditionExpression: 'subscriptionId = :subscriptionId',
+      ExpressionAttributeValues: {
+        ':subscriptionId': subscriptionId
+      }
+    }).promise();
+
+    return Items as Receipt[];
   }
 
   async delete(id: string): Promise<void> {
