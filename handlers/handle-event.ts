@@ -85,7 +85,7 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
             try {
               await sqs.sendMessage({
                 MessageDeduplicationId: `${subscriptionId}-${logEvent.log.transactionHash}-${logEvent.log.transactionLogIndex}`,
-                QueueUrl: process.env.QUEUE_URL,
+                QueueUrl: QUEUE_URL,
                 MessageBody: JSON.stringify({
                   log: logEvent,
                   webhookUrl,
