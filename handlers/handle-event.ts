@@ -3,9 +3,15 @@ import * as MessageValidator from 'sns-validator';
 import createResponse from './util/create-response';
 import * as SNS from 'aws-sdk/clients/sns';
 import { crud } from './util/subscription-crud';
+import * as SQS from 'aws-sdk/clients/sqs';
 
 const validator = new MessageValidator();
 const sns = new SNS();
+
+const sqs = new SQS();
+sqs.config.region = 'us-east-1';
+
+const { QUEUE_URL } = process.env;
 
 export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: Callback) => {
   if (!cb) {
@@ -74,7 +80,27 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
 
             const snsMessage: SNSMessage = parsedBody as SNSMessage;
 
-            throw new Error('not implemented!');
+            const logEvent = JSON.parse(snsMessage.Message);
+
+            try {
+              await sqs.sendMessage({
+                MessageDeduplicationId: `${subscriptionId}-${logEvent.log.transactionHash}-${logEvent.log.transactionLogIndex}`,
+                QueueUrl: process.env.QUEUE_URL,
+                MessageBody: JSON.stringify({
+                  log: logEvent,
+                  webhookUrl,
+                  subscriptionId
+                }),
+                MessageGroupId: '1'
+              });
+
+              cb(null, createResponse(204));
+            } catch (error) {
+              console.error('failed to send message to sqs queue', error);
+              cb(error);
+            }
+
+            break;
           }
 
           default: {
