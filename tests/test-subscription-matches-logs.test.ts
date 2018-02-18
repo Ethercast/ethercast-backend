@@ -1,4 +1,4 @@
-import getLogTopics from './util/get-log-topics';
+import { generateTopics as otherGenerateTopics } from './util/get-log-topics';
 import { generateTopics } from '../handlers/util/subscribe-to-topics';
 import { ConditionType, SubscriptionLogic } from '../handlers/util/subscription-crud';
 import { expect } from 'chai';
@@ -9,7 +9,7 @@ const CRYPTO_KITTY_LOG = {
   topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']
 };
 
-const snsTopicNames = getLogTopics(CRYPTO_KITTY_LOG);
+const snsTopicNames = otherGenerateTopics([CRYPTO_KITTY_LOG.address, ...CRYPTO_KITTY_LOG.topics]);
 
 describe('generateTopics', () => {
 
