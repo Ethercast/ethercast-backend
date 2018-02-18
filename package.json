@@ -26,6 +26,7 @@
     "qs": "^6.5.1",
     "request": "^2.83.0",
     "serverless-webpack": "^4.0.0",
+    "sns-validator": "^0.3.4",
     "ts-loader": "^2.3.7",
     "ts-mocha": "^1.1.0",
     "typescript": "^2.5.2",
