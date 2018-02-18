@@ -5,9 +5,9 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
     throw new Error('invalid call');
   }
 
-  console.log(event);
+  // TODO: handle the first request to confirm the webhook by visiting the url
+  console.log('event', JSON.stringify(event), 'context', JSON.stringify(context));
 
-  // TODO: handle when an SNS topic for a subscription gets notified by pushing the webhook event to
-  // an SQS queue
+  // TODO: put an logs in the SQS queue for pushing webhooks
   throw new Error('not implemented!');
 };
