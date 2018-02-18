@@ -120,6 +120,8 @@ export default class SubscriptionCrud {
   }
 
   async listSubscriptions(subscriptionId: string): Promise<SubscriptionArn[]> {
+    console.log(`listing arns for subscription id ${subscriptionId}`);
+
     const { Items } = await client.query({
       TableName: SUBSCRIPTIONS_ARN_TABLE,
       IndexName: SUBSCRIPTION_ID_INDEX,

@@ -10,8 +10,8 @@ provider:
   region: us-east-1
   runtime: nodejs6.10
   environment: # service wide environment variables
-    SUBSCRIPTIONS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-subs-v3
-    SUBSCRIPTIONS_ARN_TABLE: ${self:service}-${opt:stage, self:provider.stage}-sub-arns-v3
+    SUBSCRIPTIONS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-subs
+    SUBSCRIPTIONS_ARN_TABLE: ${self:service}-${opt:stage, self:provider.stage}-sub-arns
     QUEUE_URL: "https://sqs.us-east-1.amazonaws.com/135461455689/notify.fifo"
   iamRoleStatements: # permissions for all of your functions can be set here
     - Effect: Allow
@@ -113,7 +113,7 @@ functions:
     handler: handlers/delete-sub.handle
     events:
       - http:
-          method: post
+          method: delete
           path: subscriptions/{id}
           authorizer:
             name: auth
