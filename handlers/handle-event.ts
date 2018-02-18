@@ -1,10 +1,11 @@
 import { APIGatewayEvent, Callback, Context, Handler, SNSMessage } from 'aws-lambda';
 import * as MessageValidator from 'sns-validator';
-import * as request from 'request';
 import createResponse from './util/create-response';
+import * as SNS from 'aws-sdk/clients/sns';
+import { crud } from './util/subscription-crud';
 
 const validator = new MessageValidator();
-const { SUBSCRIPTIONS_ARN_TABLE } = process.env;
+const sns = new SNS();
 
 export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: Callback) => {
   if (!cb) {
@@ -18,10 +19,6 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
 
   if (!body) {
     throw new Error('missing body in the request');
-  }
-
-  if (!SUBSCRIPTIONS_ARN_TABLE) {
-    throw new Error('missing environment variable: SUBSCRIPTIONS_ARN_TABLE');
   }
 
   if (!queryStringParameters) {
@@ -40,37 +37,44 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
 
   validator.validate(
     parsedBody,
-    (err: any, message: any) => {
+    async (err: any, message: any) => {
       if (err) {
-        console.log('failed to validate the message', err);
+        console.log('failed to validate the sns message!', err);
         cb(err);
       } else {
         switch (message.Type) {
           case 'SubscriptionConfirmation': {
-            console.log(`confirming endpoint subscription: ${subscriptionId}: ${webhookUrl}`);
+            console.log(`confirming endpoint subscription: ${subscriptionId}: ${webhookUrl}`, message);
 
-            // Confirm the subscription
-            request.get(
-              message.SubscribeURL as string,
-              (error, response) => {
-                if (error) {
-                  cb(error);
-                } else {
-                  // TODO: put the confirmed subscription arn in the subscription arns table
-                  console.log(response);
-                  cb(null, createResponse(204));
-                }
+            try {
+              const { SubscriptionArn } = await sns.confirmSubscription({
+                AuthenticateOnUnsubscribe: 'true',
+                Token: message.SubscriptionToken,
+                TopicArn: message.TopicArn
+              }).promise();
+
+              if (!SubscriptionArn) {
+                throw new Error('invalid subscription arn');
               }
-            );
+
+              // save the subscription arn record
+              await crud.addSubscriptionArn(subscriptionId, SubscriptionArn);
+
+              cb(null, createResponse(204));
+            } catch (error) {
+              console.error('failed to complete subscription', error);
+              cb(error);
+            }
+
             break;
           }
 
           case 'Notification': {
-            const sns: SNSMessage = parsedBody as SNSMessage;
+            console.log('handling notification', message);
 
-            // TODO: put the webhook notification in an SQS queue
-            console.log('received SNS notification', sns);
-            break;
+            const snsMessage: SNSMessage = parsedBody as SNSMessage;
+
+            throw new Error('not implemented!');
           }
 
           default: {
