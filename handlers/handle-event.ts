@@ -80,6 +80,4 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
     // TODO: put an logs in the SQS queue for pushing webhooks
     throw new Error('pushing to sqs notification queue not implemented!');
   }
-
-  throw new Error('should never reach this line');
 };
