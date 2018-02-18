@@ -113,7 +113,7 @@ functions:
     handler: handlers/delete-sub.handle
     events:
       - http:
-          method: post
+          method: delete
           path: subscriptions/{id}
           authorizer:
             name: auth
