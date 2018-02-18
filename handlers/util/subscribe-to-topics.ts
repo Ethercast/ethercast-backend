@@ -1,5 +1,7 @@
 import {
-  Condition, CONDITION_SORT_ORDER, Subscription,
+  Condition,
+  CONDITION_SORT_ORDER,
+  Subscription,
   SubscriptionLogic
 } from './subscription-crud';
 import * as SNS from 'aws-sdk/clients/sns';
@@ -9,7 +11,7 @@ import * as qs from 'qs';
 
 const sns = new SNS();
 
-export function getCombinations(logic: SubscriptionLogic, child = false): Array<Array<Condition>> {
+export function getCombinations(logic: SubscriptionLogic): Array<Array<Condition>> {
   if (logic.length === 0) {
     return [];
   }
@@ -25,9 +27,10 @@ export function getCombinations(logic: SubscriptionLogic, child = false): Array<
   const orLogic = andLogic.splice(0, 1)[0];
   orLogic.forEach(condition => {
     const childLogic = andLogic.slice();
-    getCombinations(childLogic, true).forEach(childCombo => {
-      combinations.push([condition, ...childCombo]);
-    });
+    getCombinations(childLogic)
+      .forEach(childCombo => {
+        combinations.push([condition, ...childCombo]);
+      });
   });
 
   return combinations;
