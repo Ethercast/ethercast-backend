@@ -39,7 +39,6 @@ export function getSortedCombinations(logic: SubscriptionLogic): Array<Array<str
   // sort combinations internally (by condition type)
   return _.map(combinations, combination =>
     _.chain(combination)
-      .filter((combination) => combination.length)
       .sortBy(({ value }) => value)
       .sortBy(({ type }) => CONDITION_SORT_ORDER[type])
       .uniq(({ type, value }) => `${type}-${value}`)
