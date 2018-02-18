@@ -3,6 +3,7 @@ import uuid = require('uuid');
 
 const { SUBSCRIPTIONS_TABLE, SUBSCRIPTIONS_ARN_TABLE } = process.env;
 const USER_INDEX = 'ByUser';
+const SUBSCRIPTION_ID_INDEX = 'BySubscriptionId';
 
 export enum ConditionType {
   address = 'address',
@@ -44,6 +45,11 @@ export interface Subscription {
   description?: string; // reasonable max length - longer
 
   logic: SubscriptionLogic;
+}
+
+export interface SubscriptionArn {
+  subscriptionId: string;
+  subscriptionArn: string;
 }
 
 type Diff<T extends string, U extends string> = ({[P in T]: P } & {[P in U]: never } & { [x: string]: never })[T];
@@ -108,6 +114,30 @@ export default class SubscriptionCrud {
       TableName: SUBSCRIPTIONS_ARN_TABLE,
       Item: {
         subscriptionId,
+        subscriptionArn
+      }
+    }).promise();
+  }
+
+  async listSubscriptions(subscriptionId: string): Promise<SubscriptionArn[]> {
+    const { Items } = await client.query({
+      TableName: SUBSCRIPTIONS_ARN_TABLE,
+      IndexName: SUBSCRIPTION_ID_INDEX,
+      KeyConditionExpression: 'subscriptionId = :subscriptionId',
+      ExpressionAttributeValues: {
+        ':subscriptionId': subscriptionId
+      }
+    }).promise();
+
+    return Items as SubscriptionArn[];
+  }
+
+  async removeSubscription(subscriptionArn: string): Promise<void> {
+    console.log('removing subscription from db: ', subscriptionArn);
+
+    await client.delete({
+      TableName: SUBSCRIPTIONS_ARN_TABLE,
+      Key: {
         subscriptionArn
       }
     }).promise();
