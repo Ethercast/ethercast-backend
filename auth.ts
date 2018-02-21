@@ -4,7 +4,7 @@ import * as request from 'request';
 
 // For Auth0:       https://<project>.auth0.com/
 // refer to:        http://bit.ly/2hoeRXk
-const issuer = 'https://if-eth.auth0.com/';
+const issuer = 'https://ethercast.auth0.com/';
 
 // Generate policy to allow this user on this API:
 const generatePolicy = (principalId: string) => {
