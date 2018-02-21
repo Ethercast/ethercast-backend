@@ -84,7 +84,7 @@ export default async function createSubscriptions(subscription: Subscription): P
 
         const result = await sns.subscribe(
           {
-            Endpoint: `https://api.if-eth.com/handle-event?${qs.stringify({
+            Endpoint: `https://api.ethercast.com/handle-event?${qs.stringify({
               subscriptionId: subscription.id,
               webhookUrl: subscription.webhookUrl
             })}`,
