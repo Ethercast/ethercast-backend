@@ -1,10 +1,10 @@
-import { getCombinations, generateTopics, hash } from '../handlers/util/subscribe-to-topics';
+import { getAndedConditionCombinations, generateTopics, hash } from '../handlers/util/subscribe-to-topics';
 import { expect } from 'chai';
 import { ConditionType } from '../handlers/util/subscription-crud';
 
-describe('getCombinations', () => {
+describe('getAndedConditionCombinations', () => {
   it('works with no elements', () => {
-    expect(getCombinations([])).to.deep.eq([]);
+    expect(getAndedConditionCombinations([])).to.deep.eq([]);
     expect(generateTopics([])).to.deep.eq([]);
   });
 
@@ -18,7 +18,7 @@ describe('getCombinations', () => {
         }
       ]
     ];
-    expect(getCombinations(logic)).to.deep.eq([
+    expect(getAndedConditionCombinations(logic)).to.deep.eq([
       [
         {
           type: 'address',
@@ -46,7 +46,7 @@ describe('getCombinations', () => {
         }
       ]
     ];
-    expect(getCombinations(logic)).to.deep.eq([
+    expect(getAndedConditionCombinations(logic)).to.deep.eq([
       [
         {
           type: ConditionType.address,
@@ -76,7 +76,7 @@ describe('getCombinations', () => {
         }
       ]
     ];
-    expect(getCombinations(logic)).to.deep.eq([
+    expect(getAndedConditionCombinations(logic)).to.deep.eq([
       [
         {
           type: ConditionType.address,
@@ -119,7 +119,7 @@ describe('getCombinations', () => {
         }
       ]
     ];
-    expect(getCombinations(logic)).to.deep.eq([
+    expect(getAndedConditionCombinations(logic)).to.deep.eq([
       [
         {
           type: ConditionType.address,

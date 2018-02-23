@@ -1,6 +1,6 @@
 import {
   Condition,
-  CONDITION_SORT_ORDER,
+  CONDITION_TYPE_SORT_ORDER,
   Subscription,
   SubscriptionLogic
 } from './subscription-crud';
@@ -11,7 +11,7 @@ import * as qs from 'qs';
 
 const sns = new SNS();
 
-export function getCombinations(logic: SubscriptionLogic): Array<Array<Condition>> {
+export function getAndedConditionCombinations(logic: SubscriptionLogic): Condition[][] {
   if (logic.length === 0) {
     return [];
   }
@@ -20,14 +20,15 @@ export function getCombinations(logic: SubscriptionLogic): Array<Array<Condition
     return logic[0].map(condition => [condition]);
   }
 
-  let combinations: Array<Array<Condition>> = [];
+  let combinations: Condition[][] = [];
 
   const andLogic = logic.slice(); // for clarity
 
+  // remove the first array of or logic
   const orLogic = andLogic.splice(0, 1)[0];
+
   orLogic.forEach(condition => {
-    const childLogic = andLogic.slice();
-    getCombinations(childLogic)
+    getAndedConditionCombinations(andLogic)
       .forEach(childCombo => {
         combinations.push([condition, ...childCombo]);
       });
@@ -36,17 +37,19 @@ export function getCombinations(logic: SubscriptionLogic): Array<Array<Condition
   return combinations;
 }
 
-export function getSortedConditionCombinationValues(logic: SubscriptionLogic): Array<Array<string>> {
-  const combinations = getCombinations(logic);
+export function toSortedCombinationValues(logic: SubscriptionLogic): string[][] {
+  const combinations = getAndedConditionCombinations(logic);
 
   // sort combinations internally (by condition type)
-  return _.map(combinations, combination =>
-    _.chain(combination)
-      .sortBy(({ value }) => value)
-      .sortBy(({ type }) => CONDITION_SORT_ORDER[type])
-      .uniq(({ type, value }) => `${type}-${value}`)
-      .map(({ value }) => value)
-      .value()
+  return _.map(
+    combinations,
+    combination =>
+      _.chain(combination)
+        .sortBy(({ value }) => value)
+        .sortBy(({ type }) => CONDITION_TYPE_SORT_ORDER[type])
+        .uniq(({ type, value }) => `${type}-${value}`)
+        .map(({ value }) => value)
+        .value()
   );
 }
 
@@ -55,7 +58,7 @@ export function hash(fields: string[]): string {
 }
 
 export function generateTopics(logic: SubscriptionLogic): string[] {
-  const combinations = getSortedConditionCombinationValues(logic);
+  const combinations = toSortedCombinationValues(logic);
 
   // hash combinations and remove duplicates
   return _.chain(combinations)
@@ -64,7 +67,7 @@ export function generateTopics(logic: SubscriptionLogic): string[] {
     .value();
 }
 
-export default async function createSubscriptions(subscription: Subscription): Promise<void> {
+export default async function subscribeToTopics(endpointDomain: string, subscription: Subscription): Promise<void> {
   console.log(`generating topics for subscription`, subscription.id);
 
   const topics = generateTopics(subscription.logic);
@@ -84,7 +87,7 @@ export default async function createSubscriptions(subscription: Subscription): P
 
         const result = await sns.subscribe(
           {
-            Endpoint: `https://api.ethercast.com/handle-event?${qs.stringify({
+            Endpoint: `https://${endpointDomain}/handle-event?${qs.stringify({
               subscriptionId: subscription.id,
               webhookUrl: subscription.webhookUrl
             })}`,

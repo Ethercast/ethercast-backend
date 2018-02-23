@@ -48,7 +48,7 @@ export const handle: Handler = async (event: APIGatewayEvent, context: Context, 
   const saved = await crud.create(subscription, user);
 
   // create SNS topics for the subscription
-  await subscribeToTopics(saved);
+  await subscribeToTopics(event.headers.Host, saved);
 
   cb(null, createResponse(200, saved));
 };

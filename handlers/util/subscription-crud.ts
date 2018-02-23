@@ -14,7 +14,7 @@ export enum ConditionType {
 }
 
 // how we sort the topics in the hashable arrays
-export const CONDITION_SORT_ORDER: {[type in ConditionType]: number} = {
+export const CONDITION_TYPE_SORT_ORDER: {[type in ConditionType]: number} = {
   address: 0,
   topic0: 1,
   topic1: 2,
