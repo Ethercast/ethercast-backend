@@ -80,14 +80,14 @@ export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: C
 
             const snsMessage: SNSMessage = parsedBody as SNSMessage;
 
-            const logEvent = JSON.parse(snsMessage.Message);
+            const log = JSON.parse(snsMessage.Message);
 
             try {
               const { MessageId, MD5OfMessageBody } = await sqs.sendMessage({
-                MessageDeduplicationId: `${subscriptionId}-${logEvent.log.transactionHash}-${logEvent.log.transactionLogIndex}`,
+                MessageDeduplicationId: `${subscriptionId}-${log.transactionHash}-${log.transactionLogIndex}`,
                 QueueUrl: QUEUE_URL,
                 MessageBody: JSON.stringify({
-                  log: logEvent,
+                  log,
                   webhookUrl,
                   subscriptionId
                 }),
