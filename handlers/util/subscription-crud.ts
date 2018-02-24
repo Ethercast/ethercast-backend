@@ -162,7 +162,8 @@ export default class SubscriptionCrud {
       KeyConditionExpression: 'subscriptionId = :subscriptionId',
       ExpressionAttributeValues: {
         ':subscriptionId': subscriptionId
-      }
+      },
+      Limit: 20
     }).promise();
 
     return Items as Receipt[];
