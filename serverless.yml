@@ -9,6 +9,7 @@ provider:
   name: aws
   region: us-east-1
   runtime: nodejs6.10
+  memorySize: 128
   environment: # service wide environment variables
     SUBSCRIPTIONS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-subs
     SUBSCRIPTIONS_ARN_TABLE: ${self:service}-${opt:stage, self:provider.stage}-sub-arns
