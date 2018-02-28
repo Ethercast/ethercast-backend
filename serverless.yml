@@ -3,19 +3,23 @@ service:
 
 # Add the serverless-webpack plugin
 plugins:
-  - serverless-webpack
   - serverless-cf-vars
+  - serverless-iam-roles-per-function
+  - serverless-webpack
 
 custom:
-  subscriptions_table: ${self:service}-${opt:stage, self:provider.stage}-subs
-  subscription_arns_table: ${self:service}-${opt:stage, self:provider.stage}-sub-arns
-  webhook_receipts_table: ${self:service}-${opt:stage, self:provider.stage}-receipts
-  topic: ${self:service}-${opt:stage, self:provider.stage}
+  stage: ${opt:stage, self:provider.stage}
+  subscriptions_table: ${self:service}-${self:custom.stage}-subs
+  subscription_arns_table: ${self:service}-${self:custom.stage}-sub-arns
+  webhook_receipts_table: ${self:service}-${self:custom.stage}-receipts
+  topic: ${self:service}-${self:custom.stage}
   arn:
     subscriptions_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.subscriptions_table}
     subscriptions_arns_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.subscriptions_arns_table}
     webhook_receipts_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.webhook_receipts_table}
     topic: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.topic}
+    queue:
+      Fn::ImportValue: blockstream-queue-${self:custom.stage}
 
 provider:
   name: aws
@@ -42,9 +46,22 @@ provider:
 functions:
   # backend
 
-  # ingest:
+  ingest:
+    handler: src/pipe/ingest.handler
+    reservedConcurrency: 1
+    timeout: 60
+    events:
+      - schedule: rate(1 minute)
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+        Resource: ${self:custom.arn.queue}
 
-  # egest: TODO
+  egest:
+    handler: src/pipe/egest.handler
+    timeout: 2
 
   # CRUD
 
