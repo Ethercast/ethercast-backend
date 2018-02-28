@@ -1,97 +1,58 @@
 service:
-  name: crud-subs
+  name: ethercast
 
 # Add the serverless-webpack plugin
 plugins:
   - serverless-webpack
+  - serverless-cf-vars
+
+custom:
+  subscriptions_table: ${self:service}-${opt:stage, self:provider.stage}-subs
+  subscription_arns_table: ${self:service}-${opt:stage, self:provider.stage}-sub-arns
+  webhook_receipts_table: ${self:service}-${opt:stage, self:provider.stage}-receipts
+  topic: ${self:service}-${opt:stage, self:provider.stage}
+  arn:
+    subscriptions_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.subscriptions_table}
+    subscriptions_arns_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.subscriptions_arns_table}
+    webhook_receipts_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.webhook_receipts_table}
+    topic: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.topic}
 
 provider:
   name: aws
   region: us-east-1
   runtime: nodejs6.10
   memorySize: 128
-  environment: # service wide environment variables
-    SUBSCRIPTIONS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-subs
-    SUBSCRIPTIONS_ARN_TABLE: ${self:service}-${opt:stage, self:provider.stage}-sub-arns
-    QUEUE_URL: "https://sqs.us-east-1.amazonaws.com/135461455689/notify.fifo"
-    WEBHOOKS_RECEIPTS_TABLE: "notify-dev-webhook-receipts"
-  iamRoleStatements: # permissions for all of your functions can be set here
+  environment: ${self:custom}
+  iamRoleStatements: # TODO: restrict IAM using serverless-iam-roles-per-function
     - Effect: Allow
-      Action: # Gives permission to DynamoDB tables in a specific region
+      Action:
         - dynamodb:Query
         - dynamodb:Scan
         - dynamodb:GetItem
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:us-east-1:*:*"
-    - Effect: Allow
-      Action: # Gives permission to create sns topics
-        - sns:CreateTopic
-        - sns:Subscribe
-        - sns:Unsubscribe
-        - sns:ConfirmSubscription
-      Resource: "arn:aws:sns:us-east-1:*:*"
+      Resource: arn:aws:dynamodb:us-east-1:*:*
     - Effect: Allow
       Action:
-        - sqs:SendMessage
-      Resource: "arn:aws:sqs:us-east-1:*:*" # arn:aws:sqs:region:account-id:queuename
+        - sns:Subscribe
+        - sns:Unsubscribe
+      Resource: ${self:custom.arn.topic}
 
 functions:
+  # backend
+
+  # ingest:
+
+  # egest: TODO
+
+  # CRUD
+
   auth:
-    handler: auth.authorize
-
-  handle-event:
-    handler: handlers/handle-event.handle
-    events:
-      - http:
-          method: post
-          path: handle-event
-
-  list-subs:
-    handler: handlers/list-subs.handle
-    events:
-      - http:
-          method: get
-          path: subscriptions
-          authorizer:
-            name: auth
-            resultTtlInSeconds: 300
-            type: token
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-
-  list-receipts:
-    handler: handlers/list-webhook-receipts.handle
-    events:
-      - http:
-          method: get
-          path: subscriptions/{id}/receipts
-          authorizer:
-            name: auth
-            resultTtlInSeconds: 300
-            type: token
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
+    handler: src/auth.authorize
 
   get-sub:
-    handler: handlers/get-sub.handle
+    handler: src/get-sub.handle
     events:
       - http:
           method: get
@@ -112,7 +73,7 @@ functions:
             allowCredentials: true
 
   post-sub:
-    handler: handlers/post-sub.handle
+    handler: src/post-sub.handle
     events:
       - http:
           method: post
@@ -133,7 +94,7 @@ functions:
             allowCredentials: true
 
   delete-sub:
-    handler: handlers/delete-sub.handle
+    handler: src/delete-sub.handle
     events:
       - http:
           method: delete
@@ -152,12 +113,59 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
+
+  list-subs:
+    handler: src/list-sub.handle
+    events:
+      - http:
+          method: get
+          path: subscriptions
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
+  list-receipts:
+    handler: src/list-receipts.handle
+    events:
+      - http:
+          method: get
+          path: subscriptions/{id}/receipts
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
 resources:
   Resources:
+    Topic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.topic}
     SubscriptionsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.SUBSCRIPTIONS_TABLE}
+        TableName: ${self:custom.subscriptions_table}
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
@@ -180,17 +188,17 @@ resources:
             ProvisionedThroughput:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
-    SubscriptionArns:
+    SubscriptionArnsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.SUBSCRIPTIONS_ARN_TABLE}
+        TableName: ${self:custom.subscription_arns_table}
         AttributeDefinitions:
-          - AttributeName: subscriptionArn
+          - AttributeName: arn
             AttributeType: S
           - AttributeName: subscriptionId
             AttributeType: S
         KeySchema:
-          - AttributeName: subscriptionArn
+          - AttributeName: arn
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: 1
@@ -206,3 +214,29 @@ resources:
             ProvisionedThroughput:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
+    WebhookReceiptsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.webhook_receipts_table}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+          - AttributeName: subscriptionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 10
+        GlobalSecondaryIndexes:
+          -
+            IndexName: BySubscriptionId
+            KeySchema:
+              - AttributeName: subscriptionId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 10
+              WriteCapacityUnits: 10
