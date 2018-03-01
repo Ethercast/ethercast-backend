@@ -16,6 +16,7 @@ custom:
   subscriptions_table_arn: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.subscriptions_table}
   webhook_receipts_table_arn: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.webhook_receipts_table}
   topic_arn: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.topic}
+  queue_arn: import_me # TODO: import this
   baseDynamoDDBCapacity: 2
   capacities:
     - table: SubscriptionsTable  # DynamoDB Resource
@@ -50,6 +51,8 @@ provider:
   environment:
     SUBSCRIPTIONS_TABLE: ${self:custom.subscriptions_table}
     WEBHOOK_RECEIPTS_TABLE: ${self:custom.webhook_receipts_table}
+    TOPIC_ARN: ${self:custom.topic_arn}
+    QUEUE_ARN: ${self:custom.queue_arn}
   iamRoleStatements: # TODO: restrict IAM using serverless-iam-roles-per-function
     - Effect: Allow
       Action:
@@ -64,7 +67,7 @@ provider:
       Action:
         - sns:Subscribe
         - sns:Unsubscribe
-      Resource: ${self:custom.arn.topic}
+      Resource: ${self:custom.topic_arn}
 
 functions:
   # backend
@@ -80,7 +83,7 @@ functions:
         Action:
           - sqs:ReceiveMessage
           - sqs:DeleteMessage
-        Resource: ${self:custom.arn.queue}
+        Resource: ${self:custom.queue_arn}
 
   egest:
     handler: src/pipe/egest.handler
