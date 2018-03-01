@@ -1,7 +1,7 @@
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import uuid = require('uuid');
+import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from './env';
 
-const { SUBSCRIPTIONS_TABLE, WEBHOOKS_RECEIPTS_TABLE } = process.env;
 const USER_INDEX = 'ByUser';
 const SUBSCRIPTION_ID_INDEX = 'BySubscriptionId';
 
@@ -101,7 +101,7 @@ export default class SubscriptionCrud {
     console.log(`listing webhook receipts for ${subscriptionId}`);
 
     const { Items } = await client.query({
-      TableName: WEBHOOKS_RECEIPTS_TABLE,
+      TableName: WEBHOOK_RECEIPTS_TABLE,
       IndexName: SUBSCRIPTION_ID_INDEX,
       KeyConditionExpression: 'subscriptionId = :subscriptionId',
       ExpressionAttributeValues: {
