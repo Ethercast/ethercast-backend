@@ -23,6 +23,7 @@
     "@types/url-regex": "^4.0.0",
     "@types/uuid": "^3.4.3",
     "aws-sdk": "^2.197.0",
+    "bignumber.js": "^6.0.0",
     "chai": "^4.1.2",
     "joi": "^13.1.2",
     "jsonwebtoken": "^8.1.1",

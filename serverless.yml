@@ -16,7 +16,6 @@ custom:
   topic: ${self:custom.prefix}-topic
   arn:
     subscriptions_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.subscriptions_table}
-    subscriptions_arns_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.subscriptions_arns_table}
     webhook_receipts_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.webhook_receipts_table}
     topic: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.topic}
     queue:
