@@ -30,6 +30,8 @@
     "mocha": "^5.0.1",
     "qs": "^6.5.1",
     "request": "^2.83.0",
+    "serverless-cf-vars": "^0.1.0",
+    "serverless-iam-roles-per-function": "^0.1.5",
     "serverless-webpack": "^4.0.0",
     "sns-validator": "^0.3.4",
     "ts-loader": "^2.3.7",
