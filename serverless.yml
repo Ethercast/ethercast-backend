@@ -18,6 +18,7 @@ custom:
   topic_arn: arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.topic}
   queue_arn: import_me # TODO: import this
   baseDynamoDDBCapacity: 2
+  token_issuer: ${opt:token_issuer, "https://ethercast.auth0.com/"}
   capacities:
     - table: SubscriptionsTable  # DynamoDB Resource
       index:
@@ -53,6 +54,7 @@ provider:
     WEBHOOK_RECEIPTS_TABLE: ${self:custom.webhook_receipts_table}
     TOPIC_ARN: ${self:custom.topic_arn}
     QUEUE_ARN: ${self:custom.queue_arn}
+    TOKEN_ISSUER: ${self:custom.token_issuer}
   iamRoleStatements: # TODO: restrict IAM using serverless-iam-roles-per-function
     - Effect: Allow
       Action:

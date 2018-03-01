@@ -1,6 +1,6 @@
 import { Log } from '@ethercast/model';
 import { MessageAttributeMap, String } from 'aws-sdk/clients/sns';
-import { FilterType } from './crud/util/subscription-crud';
+import { FilterType } from './subscription-crud';
 
 export default function toMessageAttributes(log: Log): MessageAttributeMap {
   return {

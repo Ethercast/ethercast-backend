@@ -1,4 +1,5 @@
 import { SNSEvent, Context, Handler } from 'aws-lambda';
+import { Message } from 'aws-sdk/clients/sqs';
 
 interface Event {
   subscription_id: string;

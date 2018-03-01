@@ -1,21 +1,29 @@
-import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
-import { handle as getHandler } from './get-sub';
-import { crud, Subscription } from './util/subscription-crud';
-import createResponse from './util/create-response';
-import unsubscribeTopics from './util/unsubscribe-topics';
+import { crud } from '../util/subscription-crud';
+import { BAD_REQUEST, default as createProxyHandler, errorResponse, UNAUTHORIZED } from '../util/create-handler';
+import logger from '../util/logger';
 
-export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: Callback) => {
-  if (!cb) throw new Error('invalid call');
+export const handle = createProxyHandler(
+  async (event) => {
+    if (!event.pathParameters || !event.pathParameters.id) {
+      return BAD_REQUEST;
+    }
 
-  getHandler(event, context, async (err, data) => {
-    if (err) return cb(err);
+    if (!event.requestContext.authorizer || !event.requestContext.authorizer.user) {
+      return UNAUTHORIZED;
+    }
 
-    const subscription = JSON.parse((data as any).body) as Subscription;
-    console.log('got subscription', subscription);
+    const subscription = await crud.get(event.pathParameters.id);
+
+    if (!subscription || subscription.user !== event.requestContext.authorizer.user) {
+      return errorResponse(
+        404,
+        'Invalid subscription ID'
+      );
+    }
 
     await crud.deactivate(subscription.id);
-    console.log(`deactivated subscription:${subscription.id}`);
+    logger.info({ subscription }, `deactivated subscription`);
 
-    cb(null, createResponse(204));
-  });
-};
+    return { statusCode: 204 };
+  }
+);

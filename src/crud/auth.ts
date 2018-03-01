@@ -1,12 +1,15 @@
 import * as jwk from 'jsonwebtoken';
 import * as jwkToPem from 'jwk-to-pem';
-import * as request from 'request';
+import * as fetch from 'isomorphic-fetch';
+import { TOKEN_ISSUER } from '../util/env';
+import logger from '../util/logger';
 
 // For Auth0:       https://<project>.auth0.com/
 // refer to:        http://bit.ly/2hoeRXk
-const issuer = 'https://ethercast.auth0.com/';
+const issuer = TOKEN_ISSUER;
 
-// Generate policy to allow this user on this API:
+// Generate policy to allow this user on this API
+// TODO: scope by the policies on the token
 const generatePolicy = (principalId: string) => {
   return {
     principalId,
@@ -27,7 +30,7 @@ const generatePolicy = (principalId: string) => {
 };
 
 // Reusable Authorizer function, set on `authorizer` field in serverless.yml
-module.exports.authorize = (event: any, context: any, cb: any): void => {
+module.exports.authorize = async (event: any, context: any, cb: any): Promise<void> => {
   console.log('Auth function invoked');
 
   // call when the user is not authenticated
@@ -43,17 +46,16 @@ module.exports.authorize = (event: any, context: any, cb: any): void => {
   if (event.authorizationToken) {
     // Remove 'bearer ' from token:
     const token = event.authorizationToken.substring(7);
-    // Make a request to the iss + .well-known/jwks.json URL:
 
-    request(
-      { url: `${issuer}.well-known/jwks.json`, json: true },
-      (error, response, body) => {
-        if (error || response.statusCode !== 200) {
-          console.log('Request error:', error);
-          unauthorized();
-        }
+    try {
+      // Make a request to the iss + .well-known/jwks.json URL:
+      const response = await fetch(`${issuer}.well-known/jwks.json`);
 
-        // Based on the JSON of `jwks` create a Pem:
+      if (response.statusCode !== 200) {
+        unauthorized();
+      } else {
+        const body = await response.json();
+
         const k = body.keys[0];
         const { kty, n, e } = k;
 
@@ -74,7 +76,11 @@ module.exports.authorize = (event: any, context: any, cb: any): void => {
             authorized(sub);
           }
         });
-      });
+      }
+    } catch (err) {
+      logger.error({ err }, 'failed to authorize user');
+      unauthorized();
+    }
   } else {
     console.log('No authorizationToken found in the header.');
     unauthorized();

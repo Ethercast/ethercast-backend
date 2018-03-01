@@ -1,19 +1,29 @@
-import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
-import { handle as getHandler } from './get-sub';
-import { crud, Subscription } from './util/subscription-crud';
-import createResponse from './util/create-response';
+import { crud } from '../util/subscription-crud';
+import { BAD_REQUEST, default as createProxyHandler, errorResponse } from '../util/create-handler';
 
-export const handle: Handler = (event: APIGatewayEvent, context: Context, cb?: Callback) => {
-  if (!cb) throw new Error('invalid call');
+export const handle = createProxyHandler(
+  async (event) => {
 
-  getHandler(event, context, async (err, data) => {
-    if (err) return cb(err);
+    const { pathParameters } = event;
+    if (!pathParameters) {
+      return BAD_REQUEST;
+    }
 
-    const subscription = JSON.parse((data as any).body) as Subscription;
-    console.log('got subscription', subscription);
+    const { id } = pathParameters;
+    if (!id) {
+      return BAD_REQUEST;
+    }
+
+    const subscription = await crud.get(id);
+    if (!subscription || !event.requestContext.authorizer || subscription.user !== event.requestContext.authorizer.user) {
+      return errorResponse(404, 'Invalid subscription ID');
+    }
 
     const receipts = await crud.listReceipts(subscription.id);
 
-    cb(null, createResponse(200, receipts));
-  });
-};
+    return {
+      statusCode: 200,
+      body: receipts
+    };
+  }
+);

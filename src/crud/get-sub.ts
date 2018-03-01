@@ -1,21 +1,34 @@
-import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
-import { crud } from './util/subscription-crud';
-import createResponse from './util/create-response';
+import { APIGatewayEvent, Handler } from 'aws-lambda';
+import { crud } from '../util/subscription-crud';
+import createProxyHandler from '../util/create-handler';
 
-export const handle: Handler = async (event: APIGatewayEvent, context: Context, cb?: Callback) => {
-  if (!cb) throw new Error('invalid caller');
+export const handle = createProxyHandler(
+  async (event) => {
+    const { pathParameters } = event;
+    if (!pathParameters) {
+      throw new Error('missing path parameters');
+    }
 
-  const { pathParameters } = event;
-  if (!pathParameters) return cb(new Error('missing path parameter id'));
+    const { requestContext: { authorizer: { user } } } = event as any;
+    if (!user) {
+      return {
+        statusCode: 400
+      };
+    }
 
-  const { requestContext: { authorizer: { user } } } = event as any;
-  if (!user) return cb(new Error('invalid user on request'));
+    const { id } = pathParameters;
+    if (!id) {
+      throw new Error('missing id in path');
+    }
 
-  const { id } = pathParameters;
-  if (!id) return cb(new Error('missing path parameter id'));
+    const subscription = await crud.get(id);
+    if (subscription.user !== user) {
+      throw new Error(`invalid subscription id`);
+    }
 
-  const subscription = await crud.get(id);
-  if (subscription.user !== user) return cb(new Error('invalid user or invalid sub id'));
-
-  cb(null, createResponse(200, subscription));
-};
+    return {
+      statusCode: 200,
+      body: subscription
+    };
+  }
+);
