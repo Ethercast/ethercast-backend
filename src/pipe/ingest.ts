@@ -21,6 +21,7 @@ const ingest = (producer: Producer) => async (message: Message) => {
 
   // validate the log
   try {
+    // TODO: use joi validation
     if (!log.address) throw 'missing log address';
     if (!log.topics) throw 'missing log topics';
     if (!Array.isArray(log.topics)) throw 'log topics must be an array';

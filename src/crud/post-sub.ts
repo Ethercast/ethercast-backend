@@ -7,6 +7,7 @@ import createResponse from './util/create-response';
 export const handle: Handler = async (event: APIGatewayEvent, context: Context, cb?: Callback) => {
   if (!cb) throw new Error('invalid caller');
 
+  // TODO: abstract this repetitive junk out of the handle calls
   const { requestContext: { authorizer: { user } } } = event as any;
   if (!user) return cb(new Error('no user'));
 

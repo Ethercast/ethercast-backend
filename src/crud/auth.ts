@@ -67,6 +67,8 @@ module.exports.authorize = (event: any, context: any, cb: any): void => {
             console.log('Unauthorized user:', err);
             unauthorized();
           } else {
+            // TODO: we need to use the OAuth2 authorizations here in the context, so users can be authorized
+            // for specific actions in the API.
             const { sub } = decodedJwt as any;
             console.log(`Authorized user: ${sub}`);
             authorized(sub);
