@@ -1,12 +1,16 @@
 {
-  "name": "aws-nodejs-typescript",
+  "name": "ethercast-backend",
   "version": "1.0.0",
-  "description": "Serverless webpack example using Typescript",
-  "main": "handler.js",
+  "description": "backend for the ethercast api and notification pipeline",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ethercast/crud-subs"
+  },
   "scripts": {
     "test": "ts-mocha tests/**/*.test.ts"
   },
   "devDependencies": {
+    "@ethercast/model": "0.0.1",
     "@types/aws-lambda": "0.0.22",
     "@types/chai": "^4.1.2",
     "@types/joi": "^13.0.5",
@@ -34,7 +38,8 @@
     "underscore": "^1.8.3",
     "url-regex": "^4.1.1",
     "uuid": "^3.2.1",
-    "webpack": "^3.6.0"
+    "webpack": "^3.6.0",
+    "webpack-node-externals": "^1.6.0"
   },
   "author": "The serverless webpack authors (https://github.com/elastic-coders/serverless-webpack)",
   "license": "MIT"

@@ -1,38 +1,22 @@
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import uuid = require('uuid');
 
-const { SUBSCRIPTIONS_TABLE, SUBSCRIPTIONS_ARN_TABLE, WEBHOOKS_RECEIPTS_TABLE } = process.env;
+const { SUBSCRIPTIONS_TABLE, WEBHOOKS_RECEIPTS_TABLE } = process.env;
 const USER_INDEX = 'ByUser';
 const SUBSCRIPTION_ID_INDEX = 'BySubscriptionId';
 
-export enum ConditionType {
+export enum SubscriptionStatus {
+  active = 'active',
+  pending = 'pending',
+  deactivated = 'deactivated'
+}
+
+export enum FilterType {
   address = 'address',
   topic0 = 'topic0',
   topic1 = 'topic1',
   topic2 = 'topic2',
   topic3 = 'topic3'
-}
-
-// how we sort the topics in the hashable arrays
-export const CONDITION_TYPE_SORT_ORDER: {[type in ConditionType]: number} = {
-  address: 0,
-  topic0: 1,
-  topic1: 2,
-  topic2: 3,
-  topic3: 4
-};
-
-export interface Condition {
-  type: ConditionType;
-  value: string; // hex value of the type
-}
-
-// Conditions: the top-level arrays are AND-ed, nested arrays are OR-ed
-export type SubscriptionLogic = Array<Array<Condition>>;
-
-enum Status {
-  active = 'active',
-  deactivated = 'deactivated'
 }
 
 export interface Subscription {
@@ -41,16 +25,14 @@ export interface Subscription {
   user: string;
   name: string; // reasonable max length
   webhookUrl: string;
-  status: Status;
+  status: SubscriptionStatus;
   description?: string; // reasonable max length - longer
-
-  logic: SubscriptionLogic;
-}
-
-export interface SubscriptionArn {
-  subscriptionId: string;
+  filters: {
+    [filterType in FilterType]: string | string[] | null
+  };
   subscriptionArn: string;
 }
+
 
 export interface Receipt {
   id: string;
@@ -71,14 +53,14 @@ export default class SubscriptionCrud {
 
     const id = uuid.v4();
 
-    const result = await client.put({
+    await client.put({
       TableName: SUBSCRIPTIONS_TABLE,
       Item: {
         ...subscription,
         id,
         user,
         timestamp: (new Date()).getTime(),
-        status: Status.active
+        status: SubscriptionStatus.active
       }
     }).promise();
 
@@ -108,49 +90,11 @@ export default class SubscriptionCrud {
       TableName: SUBSCRIPTIONS_TABLE,
       Item: {
         ...sub,
-        status: Status.deactivated
+        status: SubscriptionStatus.deactivated
       }
     }).promise();
 
     return this.get(id);
-  }
-
-  async addSubscriptionArn(subscriptionId: string, subscriptionArn: string): Promise<void> {
-    console.log(`adding subscription arn to ${subscriptionId}: ${subscriptionArn}`);
-
-    await client.put({
-      TableName: SUBSCRIPTIONS_ARN_TABLE,
-      Item: {
-        subscriptionId,
-        subscriptionArn
-      }
-    }).promise();
-  }
-
-  async listSubscriptions(subscriptionId: string): Promise<SubscriptionArn[]> {
-    console.log(`listing arns for subscription id ${subscriptionId}`);
-
-    const { Items } = await client.query({
-      TableName: SUBSCRIPTIONS_ARN_TABLE,
-      IndexName: SUBSCRIPTION_ID_INDEX,
-      KeyConditionExpression: 'subscriptionId = :subscriptionId',
-      ExpressionAttributeValues: {
-        ':subscriptionId': subscriptionId
-      }
-    }).promise();
-
-    return Items as SubscriptionArn[];
-  }
-
-  async removeSubscription(subscriptionArn: string): Promise<void> {
-    console.log('removing subscription from db: ', subscriptionArn);
-
-    await client.delete({
-      TableName: SUBSCRIPTIONS_ARN_TABLE,
-      Key: {
-        subscriptionArn
-      }
-    }).promise();
   }
 
   async listReceipts(subscriptionId: string): Promise<Receipt[]> {
@@ -167,17 +111,6 @@ export default class SubscriptionCrud {
     }).promise();
 
     return Items as Receipt[];
-  }
-
-  async delete(id: string): Promise<void> {
-    console.log('DELETING subscription with ID', id);
-
-    await client.delete({
-      TableName: SUBSCRIPTIONS_TABLE,
-      Key: {
-        id
-      }
-    }).promise();
   }
 
   async list(user: string): Promise<Subscription[]> {

@@ -9,10 +9,11 @@ plugins:
 
 custom:
   stage: ${opt:stage, self:provider.stage}
-  subscriptions_table: ${self:service}-${self:custom.stage}-subs
-  subscription_arns_table: ${self:service}-${self:custom.stage}-sub-arns
-  webhook_receipts_table: ${self:service}-${self:custom.stage}-receipts
-  topic: ${self:service}-${self:custom.stage}
+  prefix: ${self:custom.prefix}
+  subscriptions_table: ${self:custom.prefix}-subs
+  subscription_arns_table: ${self:custom.prefix}-sub-arns
+  webhook_receipts_table: ${self:custom.prefix}-receipts
+  topic: ${self:custom.prefix}-topic
   arn:
     subscriptions_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.subscriptions_table}
     subscriptions_arns_table: arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:${self:custom.subscriptions_arns_table}
@@ -205,32 +206,7 @@ resources:
             ProvisionedThroughput:
               ReadCapacityUnits: 1
               WriteCapacityUnits: 1
-    SubscriptionArnsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:custom.subscription_arns_table}
-        AttributeDefinitions:
-          - AttributeName: arn
-            AttributeType: S
-          - AttributeName: subscriptionId
-            AttributeType: S
-        KeySchema:
-          - AttributeName: arn
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-        GlobalSecondaryIndexes:
-          -
-            IndexName: BySubscriptionId
-            KeySchema:
-              - AttributeName: subscriptionId
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
+
     WebhookReceiptsTable:
       Type: AWS::DynamoDB::Table
       Properties:

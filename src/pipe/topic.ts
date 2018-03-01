@@ -1,11 +1,8 @@
 import { SNS } from 'aws-sdk';
-import mapValues = require('lodash.mapvalues');
+import * as _ from 'underscore';
+import { MessageAttributeMap } from 'aws-sdk/clients/sns';
 
 const sns = new SNS();
-
-interface Attributes {
-  [string]: string[];
-}
 
 export class Topic {
   private arn: string;
@@ -15,18 +12,21 @@ export class Topic {
     console.log(`initializing topic:${this.arn}`);
   }
 
-  public async publish(attributes: Attributes, message: Object) {
-    const MessageAttributes = mapValues(attributes, (attr) => ({
-      DataType: 'String',
-      StringValue: attr,
-    }));
+  public async publish(attributes: MessageAttributeMap, message: Object) {
+    const MessageAttributes = _.mapObject(
+      attributes,
+      (attr: string) => ({
+        DataType: 'String',
+        StringValue: attr
+      })
+    );
 
     console.log(`publishing message: ${attributes}`);
 
     return sns.publish({
-      Message: message,
-      MessageAttributes,
-      TopicArn: this.arn,
+      Message: JSON.stringify(message),
+      MessageAttributes: attributes,
+      TopicArn: this.arn
     }).promise();
   }
 }

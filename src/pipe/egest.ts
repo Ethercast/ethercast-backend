@@ -7,21 +7,21 @@ interface Event {
 
 const lookup = async () => {
   // TODO
-}
+};
 
 const ping = async () => {
   // TODO
-}
+};
 
 const logReceipt = async () => {
   // TODO
-}
+};
 
 const egest = async (subscriptionArn: string, message: Message) => {
   const subscription = await lookup(subscriptionArn);
   const result = await ping(subscription);
   await logReceipt(subscription, result);
-}
+};
 
 export const handler: Handler = async (event: SNSEvent, context: Context) => {
   try {
@@ -36,4 +36,4 @@ export const handler: Handler = async (event: SNSEvent, context: Context) => {
   } catch (err) {
     throw new Error(`${err}: ${event}`);
   }
-}
+};
