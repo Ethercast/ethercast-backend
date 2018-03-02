@@ -3,10 +3,9 @@ import SubscriptionCrud from '../util/subscription-crud';
 import { default as createApiGatewayHandler, simpleError } from '../util/create-api-gateway-handler';
 import logger from '../util/logger';
 import * as SNS from 'aws-sdk/clients/sns';
-import { DocumentClient } from 'aws-sdk/lib/dynamodb/document_client';
-
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 const sns = new SNS();
-const crud = new SubscriptionCrud({ client: new DocumentClient() });
+const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient() });
 
 export const handle = createApiGatewayHandler(
   async ({ pathParameters: { id }, user }) => {

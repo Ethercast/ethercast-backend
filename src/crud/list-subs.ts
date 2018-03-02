@@ -1,9 +1,9 @@
 import 'source-map-support/register';
-import { default as createApiGatewayHandler } from '../util/create-api-gateway-handler';
-import { DocumentClient } from 'aws-sdk/lib/dynamodb/document_client';
+import createApiGatewayHandler from '../util/create-api-gateway-handler';
 import SubscriptionCrud from '../util/subscription-crud';
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 
-const crud = new SubscriptionCrud({ client: new DocumentClient() });
+const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient() });
 
 export const handle = createApiGatewayHandler(
   async ({ user }) => {
