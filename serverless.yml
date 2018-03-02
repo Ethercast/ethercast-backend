@@ -9,17 +9,18 @@ plugins:
 
 custom:
   webpackIncludeModules: true # enable auto-packing of external modules
+  account: 135461455689
   region: ${opt:region, self:provider.region}
   stage: ${opt:stage, self:provider.stage}
   prefix: ${self:service}-${self:custom.stage}
   subscriptionsTable: ${self:custom.prefix}-subscriptions
   receiptsTable: ${self:custom.prefix}-receipts
   notificationTopicName: ${self:custom.prefix}-topic
-  notificationTopicArn: "arn:aws:sns:${self:custom.region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
+  notificationTopicArn: "arn:aws:sns:${self:custom.region}:${self:custom.account}:${self:custom.notificationTopicName}"
   notificationLambdaName: ${self:custom.prefix}-notify-lambda
-  notificationLambdaArn: "arn:aws:lambda:${self:custom.region}:#{AWS::AccountId}:function:${self:custom.notificationLambdaName}"
+  notificationLambdaArn: "arn:aws:lambda:${self:custom.region}:${self:custom.account}:function:${self:custom.notificationLambdaName}"
   logQueueName: ${opt:logQueueName}
-  logQueueArn: "arn:aws:sqs:${self:custom.region}:#{AWS::AccountId}:${self:custom.logQueueName}"
+  logQueueArn: "arn:aws:sqs:${self:custom.region}:${self:custom.account}:${self:custom.logQueueName}"
   baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "2"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
   logLevel: ${opt:logLevel, "info"}
@@ -71,11 +72,11 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
       Resource:
-        - "arn:aws:dynamodb:${self:custom.region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}"
-        - "arn:aws:dynamodb:${self:custom.region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}/ByUser"
-        - "arn:aws:dynamodb:${self:custom.region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}/BySubscriptionArn"
-        - "arn:aws:dynamodb:${self:custom.region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}"
-        - "arn:aws:dynamodb:${self:custom.region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}/BySubscriptionId"
+        - "arn:aws:dynamodb:${self:custom.region}:${self:custom.account}:table/${self:custom.subscriptionsTable}"
+        - "arn:aws:dynamodb:${self:custom.region}:${self:custom.account}:table/${self:custom.subscriptionsTable}/ByUser"
+        - "arn:aws:dynamodb:${self:custom.region}:${self:custom.account}:table/${self:custom.subscriptionsTable}/BySubscriptionArn"
+        - "arn:aws:dynamodb:${self:custom.region}:${self:custom.account}:table/${self:custom.receiptsTable}"
+        - "arn:aws:dynamodb:${self:custom.region}:${self:custom.account}:table/${self:custom.receiptsTable}/BySubscriptionId"
     - Effect: Allow
       Action: # Gives the poller permission to execute the drain q lambda
         - lambda:InvokeFunction
