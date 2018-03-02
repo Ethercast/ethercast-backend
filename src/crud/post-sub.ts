@@ -7,6 +7,7 @@ import getFilterCombinations from '../util/get-filter-combinations';
 import { NOTIFICATION_LAMBDA_ARN, NOTIFICATION_TOPIC_ARN } from '../util/env';
 import * as SNS from 'aws-sdk/clients/sns';
 import logger from '../util/logger';
+import toFilterPolicy from '../util/to-filter-policy';
 
 const sns = new SNS();
 
@@ -56,6 +57,22 @@ export const handle = createApiGatewayHandler(
       subscription.subscriptionArn = SubscriptionArn;
     } catch (err) {
       logger.error({ err }, 'failed to subscribe to topic');
+
+      throw err;
+    }
+
+    try {
+      await sns.setSubscriptionAttributes({
+        AttributeName: 'FilterPolicy',
+        SubscriptionArn: subscription.subscriptionArn,
+        AttributeValue: JSON.stringify(toFilterPolicy(subscription.filters))
+      }).promise();
+    } catch (err) {
+      logger.error({ err }, 'failed to set subscription attributes');
+
+      // try to remove them
+      await sns.unsubscribe({ SubscriptionArn: subscription.subscriptionArn }).promise();
+
       throw err;
     }
 
