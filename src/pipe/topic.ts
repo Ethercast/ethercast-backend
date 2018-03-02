@@ -1,6 +1,6 @@
 import { SNS } from 'aws-sdk';
-import * as _ from 'underscore';
 import { MessageAttributeMap } from 'aws-sdk/clients/sns';
+import logger from '../util/logger';
 
 const sns = new SNS();
 
@@ -9,19 +9,12 @@ export class Topic {
 
   constructor(arn: string) {
     this.arn = arn;
-    console.log(`initializing topic:${this.arn}`);
+
+    logger.info({ arn: this.arn }, `initializing topic`);
   }
 
   public async publish(attributes: MessageAttributeMap, message: Object) {
-    const MessageAttributes = _.mapObject(
-      attributes,
-      (attr: string) => ({
-        DataType: 'String',
-        StringValue: attr
-      })
-    );
-
-    console.log(`publishing message: ${attributes}`);
+    logger.info({ attributes }, `publishing message`);
 
     const { MessageId } = await sns.publish({
       Message: JSON.stringify(message),
@@ -29,7 +22,7 @@ export class Topic {
       TopicArn: this.arn
     }).promise();
 
-    console.log(`published message:${MessageId}`);
+    logger.info({ MessageId }, `published message`);
 
     return;
   }

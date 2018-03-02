@@ -32,7 +32,7 @@ const generatePolicy = (principalId: string) => {
 
 // Reusable Authorizer function, set on `authorizer` field in serverless.yml
 module.exports.authorize = async (event: any, context: any, cb: any): Promise<void> => {
-  console.log('Auth function invoked');
+  logger.info('Auth function invoked');
 
   // call when the user is not authenticated
   function unauthorized() {
@@ -67,13 +67,13 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
         // Verify the token:
         jwk.verify(token, pem, { issuer }, (err, decodedJwt) => {
           if (err) {
-            console.log('Unauthorized user:', err);
+            logger.info({ err }, 'Unauthorized user');
             unauthorized();
           } else {
             // TODO: we need to use the OAuth2 authorizations here in the context, so users can be authorized
             // for specific actions in the API.
             const { sub } = decodedJwt as any;
-            console.log(`Authorized user: ${sub}`);
+            logger.info({ sub }, `Authorized user`);
             authorized(sub);
           }
         });
@@ -83,7 +83,7 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
       unauthorized();
     }
   } else {
-    console.log('No authorizationToken found in the header.');
+    logger.info('No authorizationToken found in the header.');
     unauthorized();
   }
 };

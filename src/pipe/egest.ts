@@ -1,10 +1,4 @@
-import { SNSEvent, Context, Handler } from 'aws-lambda';
-import { Message } from 'aws-sdk/clients/sqs';
-
-interface Event {
-  subscription_id: string;
-  webhook_url: string;
-}
+import { Context, Handler, SNSEvent } from 'aws-lambda';
 
 interface Subscription {
 }
