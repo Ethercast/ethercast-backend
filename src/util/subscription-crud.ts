@@ -7,9 +7,13 @@ import uuid = require('uuid');
 const SUBSCRIPTIONS_USER_INDEX = 'ByUser';
 const WEBHOOK_RECEIPTS_SUBSCRIPTION_ID_INDEX = 'BySubscriptionId';
 
-const client = new DocumentClient();
+export default class SubscriptionCrud {
+  client: DocumentClient;
 
-class SubscriptionCrud {
+  constructor({ client }: { client: DocumentClient }) {
+    this.client = client;
+  }
+
   async save(subscription: Subscription, user: string): Promise<Subscription> {
     logger.info({ subscription }, 'saving subscription to dynamo');
 
@@ -26,7 +30,7 @@ class SubscriptionCrud {
       throw new Error('Validation error encountered while saving subscription');
     }
 
-    await client.put({
+    await this.client.put({
       TableName: SUBSCRIPTIONS_TABLE,
       Item: toSave
     }).promise();
@@ -39,7 +43,7 @@ class SubscriptionCrud {
   async get(id: string, ConsistentRead: boolean = true): Promise<Subscription> {
     logger.info({ id, ConsistentRead }, 'getting subscription');
 
-    const { Item } = await client.get({
+    const { Item } = await this.client.get({
       TableName: SUBSCRIPTIONS_TABLE,
       Key: {
         id
@@ -55,7 +59,7 @@ class SubscriptionCrud {
 
     const sub = await this.get(id);
 
-    await client.put({
+    await this.client.put({
       TableName: SUBSCRIPTIONS_TABLE,
       Item: {
         ...sub,
@@ -69,7 +73,7 @@ class SubscriptionCrud {
   async listReceipts(subscriptionId: string): Promise<Receipt[]> {
     logger.info({ subscriptionId }, `listing webhook receipts`);
 
-    const { Items } = await client.query({
+    const { Items } = await this.client.query({
       TableName: WEBHOOK_RECEIPTS_TABLE,
       IndexName: WEBHOOK_RECEIPTS_SUBSCRIPTION_ID_INDEX,
       KeyConditionExpression: 'subscriptionId = :subscriptionId',
@@ -85,7 +89,7 @@ class SubscriptionCrud {
   async list(user: string): Promise<Subscription[]> {
     logger.info({ user }, 'listing subscriptions');
 
-    const { Items } = await client.query({
+    const { Items } = await this.client.query({
       TableName: SUBSCRIPTIONS_TABLE,
       IndexName: SUBSCRIPTIONS_USER_INDEX,
       KeyConditionExpression: '#user = :user',
@@ -100,5 +104,3 @@ class SubscriptionCrud {
     return Items as Subscription[];
   }
 }
-
-export default new SubscriptionCrud();
