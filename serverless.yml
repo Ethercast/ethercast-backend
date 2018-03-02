@@ -15,7 +15,7 @@ custom:
   receiptsTable: ${self:custom.prefix}-receipts
   notificationTopicName: ${self:custom.prefix}-topic
   notificationLambdaName: ${self:custom.prefix}-notify-lambda
-  logQueueName: ${opt:logQueueName}
+  logQueueName: "serverless-blockstream-${self:custom.stage}-log-firehose.fifo"
   baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "2"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
   logLevel: ${opt:logLevel, "info"}
