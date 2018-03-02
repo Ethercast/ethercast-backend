@@ -1,3 +1,4 @@
+import 'source-map-support/register';
 import * as jwk from 'jsonwebtoken';
 import * as jwkToPem from 'jwk-to-pem';
 import fetch from 'node-fetch';

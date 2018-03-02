@@ -8,4 +8,4 @@ export const WEBHOOK_RECEIPTS_TABLE: string = env.get('WEBHOOK_RECEIPTS_TABLE').
 
 export const NOTIFICATION_TOPIC_NAME: string = env.get('NOTIFICATION_TOPIC_NAME').required().asString();
 
-export const TOKEN_ISSUER: string = env.get('TOKEN_ISSUER').required().asString();
+export const TOKEN_ISSUER: string = env.get('TOKEN_ISSUER').required().asUrlString();

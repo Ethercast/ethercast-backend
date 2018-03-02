@@ -1,3 +1,4 @@
+import 'source-map-support/register';
 import crud from '../util/subscription-crud';
 import { default as createApiGatewayHandler, simpleError } from '../util/create-api-gateway-handler';
 import logger from '../util/logger';
