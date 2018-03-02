@@ -19,7 +19,10 @@ function filterOption(item: Schema) {
 export const JoiSubscriptionPostRequest = Joi.object().keys({
   name: Joi.string().min(1).max(256).required(),
   description: Joi.string().max(1024),
-  webhookUrl: Joi.string().regex(urlRegex()).required(),
+  webhookUrl: Joi.string()
+    .uri({ scheme: ['http', 'https'] })
+    .regex(urlRegex(), 'URL regular expression')
+    .required(),
   filters: Joi.object({
     address: filterOption(address),
     topic0: filterOption(topic),
