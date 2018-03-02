@@ -1,10 +1,11 @@
 import { SNS } from 'aws-sdk';
-import { MessageAttributeMap } from 'aws-sdk/clients/sns';
-import logger from '../util/logger';
+import logger from './logger';
+import { Log } from '@ethercast/model';
+import toMessageAttributes from './to-message-attributes';
 
 const sns = new SNS();
 
-export class Topic {
+export default class LogMessageProducer {
   private topicArn: string;
 
   constructor(topicArn: string) {
@@ -13,11 +14,13 @@ export class Topic {
     logger.info({ topicArn }, `initializing topic`);
   }
 
-  public async publish(attributes: MessageAttributeMap, message: Object) {
+  public async publish(log: Log) {
+    const attributes = toMessageAttributes(log);
+
     logger.info({ attributes }, `publishing message`);
 
     const { MessageId } = await sns.publish({
-      Message: JSON.stringify(message),
+      Message: JSON.stringify(log),
       MessageAttributes: attributes,
       TopicArn: this.topicArn
     }).promise();
