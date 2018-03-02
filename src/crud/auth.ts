@@ -1,12 +1,16 @@
+import 'source-map-support/register';
 import * as jwk from 'jsonwebtoken';
 import * as jwkToPem from 'jwk-to-pem';
-import * as request from 'request';
+import fetch from 'node-fetch';
+import { TOKEN_ISSUER } from '../util/env';
+import logger from '../util/logger';
 
 // For Auth0:       https://<project>.auth0.com/
 // refer to:        http://bit.ly/2hoeRXk
-const issuer = 'https://ethercast.auth0.com/';
+const issuer = TOKEN_ISSUER;
 
-// Generate policy to allow this user on this API:
+// Generate policy to allow this user on this API
+// TODO: scope by the policies on the token
 const generatePolicy = (principalId: string) => {
   return {
     principalId,
@@ -27,8 +31,8 @@ const generatePolicy = (principalId: string) => {
 };
 
 // Reusable Authorizer function, set on `authorizer` field in serverless.yml
-module.exports.authorize = (event: any, context: any, cb: any): void => {
-  console.log('Auth function invoked');
+module.exports.authorize = async (event: any, context: any, cb: any): Promise<void> => {
+  logger.info('Auth function invoked');
 
   // call when the user is not authenticated
   function unauthorized() {
@@ -43,17 +47,16 @@ module.exports.authorize = (event: any, context: any, cb: any): void => {
   if (event.authorizationToken) {
     // Remove 'bearer ' from token:
     const token = event.authorizationToken.substring(7);
-    // Make a request to the iss + .well-known/jwks.json URL:
 
-    request(
-      { url: `${issuer}.well-known/jwks.json`, json: true },
-      (error, response, body) => {
-        if (error || response.statusCode !== 200) {
-          console.log('Request error:', error);
-          unauthorized();
-        }
+    try {
+      // Make a request to the iss + .well-known/jwks.json URL:
+      const response = await fetch(`${issuer}.well-known/jwks.json`);
 
-        // Based on the JSON of `jwks` create a Pem:
+      if (response.status !== 200) {
+        unauthorized();
+      } else {
+        const body = await response.json();
+
         const k = body.keys[0];
         const { kty, n, e } = k;
 
@@ -64,17 +67,23 @@ module.exports.authorize = (event: any, context: any, cb: any): void => {
         // Verify the token:
         jwk.verify(token, pem, { issuer }, (err, decodedJwt) => {
           if (err) {
-            console.log('Unauthorized user:', err);
+            logger.info({ err }, 'Unauthorized user');
             unauthorized();
           } else {
+            // TODO: we need to use the OAuth2 authorizations here in the context, so users can be authorized
+            // for specific actions in the API.
             const { sub } = decodedJwt as any;
-            console.log(`Authorized user: ${sub}`);
+            logger.info({ sub }, `Authorized user`);
             authorized(sub);
           }
         });
-      });
+      }
+    } catch (err) {
+      logger.error({ err }, 'failed to authorize user');
+      unauthorized();
+    }
   } else {
-    console.log('No authorizationToken found in the header.');
+    logger.info('No authorizationToken found in the header.');
     unauthorized();
   }
 };

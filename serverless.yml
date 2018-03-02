@@ -1,21 +1,68 @@
 service:
-  name: crud-subs
+  name: ethercast
 
-# Add the serverless-webpack plugin
 plugins:
+  - serverless-pseudo-parameters
+  - serverless-dynamodb-autoscaling
+  - serverless-iam-roles-per-function
   - serverless-webpack
+
+custom:
+  webpackIncludeModules: true # enable auto-packing of external modules
+  account: 135461455689
+  region: ${opt:region, self:provider.region}
+  stage: ${opt:stage, self:provider.stage}
+  prefix: ${self:service}-${self:custom.stage}
+  subscriptionsTable: ${self:custom.prefix}-subscriptions
+  receiptsTable: ${self:custom.prefix}-receipts
+  notificationTopicName: ${self:custom.prefix}-topic
+  notificationTopicArn: "arn:aws:sns:${self:custom.region}:${self:custom.account}:${self:custom.notificationTopicName}"
+  notificationLambdaName: ${self:custom.prefix}-notify-lambda
+  notificationLambdaArn: "arn:aws:lambda:${self:custom.region}:${self:custom.account}:function:${self:custom.notificationLambdaName}"
+  logQueueName: ${opt:logQueueName}
+  logQueueArn: "arn:aws:sqs:${self:custom.region}:${self:custom.account}:${self:custom.logQueueName}"
+  baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "2"}
+  tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
+  logLevel: ${opt:logLevel, "info"}
+  capacities:
+    - table: SubscriptionsTable  # DynamoDB Resource
+      index:
+        - ByUser
+        - BySubscriptionArn
+      read:
+        minimum: ${self:custom.baseDynamoDDBCapacity}        # Minimum read capacity
+        maximum: 100      # Maximum read capacity
+        usage: 0.8        # Targeted usage percentage
+      write:
+        minimum: ${self:custom.baseDynamoDDBCapacity}        # Minimum write capacity
+        maximum: 100      # Maximum write capacity
+        usage: 0.8        # Targeted usage percentage
+    - table: WebhookReceiptsTable  # DynamoDB Resource
+      index:
+        - BySubscriptionId
+      read:
+        minimum: ${self:custom.baseDynamoDDBCapacity}        # Minimum read capacity
+        maximum: 100      # Maximum read capacity
+        usage: 0.8        # Targeted usage percentage
+      write:
+        minimum: ${self:custom.baseDynamoDDBCapacity}        # Minimum write capacity
+        maximum: 100      # Maximum write capacity
+        usage: 0.8        # Targeted usage percentage
 
 provider:
   name: aws
   region: us-east-1
   runtime: nodejs6.10
   memorySize: 128
-  environment: # service wide environment variables
-    SUBSCRIPTIONS_TABLE: ${self:service}-${opt:stage, self:provider.stage}-subs
-    SUBSCRIPTIONS_ARN_TABLE: ${self:service}-${opt:stage, self:provider.stage}-sub-arns
-    QUEUE_URL: "https://sqs.us-east-1.amazonaws.com/135461455689/notify.fifo"
-    WEBHOOKS_RECEIPTS_TABLE: "notify-dev-webhook-receipts"
-  iamRoleStatements: # permissions for all of your functions can be set here
+  environment:
+    LOG_LEVEL: ${self:custom.logLevel}
+    SUBSCRIPTIONS_TABLE: ${self:custom.subscriptionsTable}
+    WEBHOOK_RECEIPTS_TABLE: ${self:custom.receiptsTable}
+    TOKEN_ISSUER: ${self:custom.tokenIssuer}
+    NOTIFICATION_TOPIC_ARN: ${self:custom.notificationTopicArn}
+    NOTIFICATION_LAMBDA_ARN: ${self:custom.notificationLambdaArn}
+    LOG_QUEUE_NAME: ${self:custom.logQueueName}
+  iamRoleStatements:
     - Effect: Allow
       Action: # Gives permission to DynamoDB tables in a specific region
         - dynamodb:Query
@@ -24,32 +71,59 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:us-east-1:*:*"
+      Resource:
+        - "arn:aws:dynamodb:${self:custom.region}:${self:custom.account}:table/${self:custom.subscriptionsTable}"
+        - "arn:aws:dynamodb:${self:custom.region}:${self:custom.account}:table/${self:custom.subscriptionsTable}/ByUser"
+        - "arn:aws:dynamodb:${self:custom.region}:${self:custom.account}:table/${self:custom.subscriptionsTable}/BySubscriptionArn"
+        - "arn:aws:dynamodb:${self:custom.region}:${self:custom.account}:table/${self:custom.receiptsTable}"
+        - "arn:aws:dynamodb:${self:custom.region}:${self:custom.account}:table/${self:custom.receiptsTable}/BySubscriptionId"
     - Effect: Allow
-      Action: # Gives permission to create sns topics
-        - sns:CreateTopic
+      Action: # Gives the poller permission to execute the drain q lambda
+        - lambda:InvokeFunction
+      Resource:
+        - ${self:custom.notificationLambdaArn}
+    - Effect: Allow
+      Action:
         - sns:Subscribe
         - sns:Unsubscribe
         - sns:ConfirmSubscription
-      Resource: "arn:aws:sns:us-east-1:*:*"
-    - Effect: Allow
-      Action:
-        - sqs:SendMessage
-      Resource: "arn:aws:sqs:us-east-1:*:*" # arn:aws:sqs:region:account-id:queuename
+      Resource:
+        - ${self:custom.notificationTopicArn}
 
 functions:
-  auth:
-    handler: auth.authorize
-
-  handle-event:
-    handler: handlers/handle-event.handle
+  # backend
+  ingest:
+    handler: src/pipe/ingest.handle
+    reservedConcurrency: 1
+    timeout: 60
     events:
-      - http:
-          method: post
-          path: handle-event
+      - schedule: rate(1 minute)
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - sqs:GetQueueUrl
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+        Resource:
+          - ${self:custom.logQueueArn}
+      - Effect: Allow
+        Action:
+          - sns:Publish
+        Resource:
+          - ${self:custom.notificationTopicArn}
+
+  egest:
+    handler: src/pipe/egest.handle
+    name: ${self:custom.notificationLambdaName}
+    timeout: 2
+
+  # CRUD
+
+  auth:
+    handler: src/crud/auth.authorize
 
   list-subs:
-    handler: handlers/list-subs.handle
+    handler: src/crud/list-subs.handle
     events:
       - http:
           method: get
@@ -70,7 +144,7 @@ functions:
             allowCredentials: true
 
   list-receipts:
-    handler: handlers/list-webhook-receipts.handle
+    handler: src/crud/list-receipts.handle
     events:
       - http:
           method: get
@@ -91,7 +165,7 @@ functions:
             allowCredentials: true
 
   get-sub:
-    handler: handlers/get-sub.handle
+    handler: src/crud/get-sub.handle
     events:
       - http:
           method: get
@@ -112,7 +186,7 @@ functions:
             allowCredentials: true
 
   post-sub:
-    handler: handlers/post-sub.handle
+    handler: src/crud/post-sub.handle
     events:
       - http:
           method: post
@@ -133,7 +207,7 @@ functions:
             allowCredentials: true
 
   delete-sub:
-    handler: handlers/delete-sub.handle
+    handler: src/crud/delete-sub.handle
     events:
       - http:
           method: delete
@@ -152,23 +226,30 @@ functions:
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
+
 resources:
   Resources:
+    Topic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.notificationTopicName}
     SubscriptionsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.SUBSCRIPTIONS_TABLE}
+        TableName: ${self:custom.subscriptionsTable}
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
           - AttributeName: user
             AttributeType: S
+          - AttributeName: subscriptionArn
+            AttributeType: S
         KeySchema:
           - AttributeName: id
             KeyType: HASH
         ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+          ReadCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+          WriteCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
         GlobalSecondaryIndexes:
           -
             IndexName: ByUser
@@ -178,23 +259,34 @@ resources:
             Projection:
               ProjectionType: ALL
             ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
-    SubscriptionArns:
+              ReadCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+              WriteCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+          -
+            IndexName: BySubscriptionArn
+            KeySchema:
+              - AttributeName: subscriptionArn
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+              WriteCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+
+    WebhookReceiptsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:provider.environment.SUBSCRIPTIONS_ARN_TABLE}
+        TableName: ${self:custom.receiptsTable}
         AttributeDefinitions:
-          - AttributeName: subscriptionArn
+          - AttributeName: id
             AttributeType: S
           - AttributeName: subscriptionId
             AttributeType: S
         KeySchema:
-          - AttributeName: subscriptionArn
+          - AttributeName: id
             KeyType: HASH
         ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+          ReadCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+          WriteCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
         GlobalSecondaryIndexes:
           -
             IndexName: BySubscriptionId
@@ -204,5 +296,5 @@ resources:
             Projection:
               ProjectionType: ALL
             ProvisionedThroughput:
-              ReadCapacityUnits: 1
-              WriteCapacityUnits: 1
+              ReadCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+              WriteCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
