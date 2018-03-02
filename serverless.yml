@@ -16,7 +16,7 @@ custom:
   receiptsTable: ${self:custom.prefix}-receipts
   notificationTopicName: ${self:custom.prefix}-topic
   notificationLambdaName: ${self:custom.prefix}-notify-lambda
-  logQueueArn: "arn:aws:sqs:${self:custom.region}:#{AWS::AccountId}:${opt:logQueue, ""}" #TODO: import from another stack? or just specify it.
+  logQueueArn: arn:aws:sqs:${self:custom.region}:#{AWS::AccountId}:${opt:logQueue, ""} # TODO: import from another stack? or just specify it.
   baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "2"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
   logLevel: ${opt:logLevel, "info"}
