@@ -222,6 +222,7 @@ functions:
             allowCredentials: true
 
 resources:
+  Description: CRUD API for subscriptions as well as ingest and egest notifications for log firehose
   Resources:
     Topic:
       Type: AWS::SNS::Topic
