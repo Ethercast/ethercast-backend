@@ -7,7 +7,7 @@ import {
 } from '../util/create-api-gateway-handler';
 import getFilterCombinations from '../util/get-filter-combinations';
 import logger from '../util/logger';
-import { createSNSSubscription } from '../util/sns-add-subscription-util';
+import { createSNSSubscription } from '../util/sns-subscription-util';
 import { NOTIFICATION_LAMBDA_NAME, NOTIFICATION_TOPIC_NAME } from '../util/env';
 import uuid = require('uuid');
 

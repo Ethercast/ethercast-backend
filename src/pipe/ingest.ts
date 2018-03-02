@@ -6,7 +6,7 @@ import logger from '../util/logger';
 import { LOG_QUEUE_NAME } from '../util/env';
 import * as SQS from 'aws-sdk/clients/sqs';
 import LogMessageProducer from '../util/log-message-producer';
-import { getTopicArn } from '../util/sns-add-subscription-util';
+import { getTopicArn } from '../util/sns-subscription-util';
 
 const sqs = new SQS();
 
