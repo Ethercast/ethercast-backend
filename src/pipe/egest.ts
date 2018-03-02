@@ -60,7 +60,7 @@ const ping = async (subscription: Subscription, log: Log) => {
   // TODO unsubscribe
 };
 
-const logReceipt = async (subscription: Subscription, result: Status) => {
+const logReceipt = async (subscription: Subscription, result: Response) => {
   // TODO
 };
 
