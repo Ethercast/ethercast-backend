@@ -92,7 +92,7 @@ provider:
 functions:
   # backend
   ingest:
-    handler: src/pipe/ingest.handler
+    handler: src/pipe/ingest.handle
     reservedConcurrency: 1
     timeout: 60
     events:
@@ -107,7 +107,7 @@ functions:
           - ${self:custom.logQueueArn}
 
   egest:
-    handler: src/pipe/egest.handler
+    handler: src/pipe/egest.handle
     name: ${self:custom.notificationLambdaName}
     timeout: 2
 

@@ -1,3 +1,4 @@
+import 'source-map-support/register';
 import { Context, Handler } from 'aws-lambda';
 import { Topic as Producer } from './topic';
 import { Message, Queue as Consumer } from './queue';
@@ -24,7 +25,7 @@ const handleQueueMessage = async (message: Message) => {
   return producer.publish(attributes, log);
 };
 
-export const handler: Handler = async (event, context: Context) => {
+export const handle: Handler = async (event, context: Context) => {
   try {
     const { QueueUrl } = await sqs.getQueueUrl({
       QueueName: LOG_QUEUE_NAME

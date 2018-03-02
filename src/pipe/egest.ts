@@ -1,14 +1,9 @@
+import 'source-map-support/register';
 import { Context, Handler, SNSEvent } from 'aws-lambda';
-import { Message } from 'aws-sdk/clients/sqs';
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from './env';
-import { Receipt, Subscription, SubscriptionStatus } from '../util/models';
+import { Subscription } from '../util/models';
 import logger from '../util/logger';
-
-interface Event {
-  subscription_id: string;
-  webhook_url: string;
-}
 
 const client = new DocumentClient();
 
@@ -46,7 +41,7 @@ const egest = async (subscriptionArn: string, message: string) => {
   await logReceipt(subscription, result);
 };
 
-export const handler: Handler = async (event: SNSEvent, context: Context) => {
+export const handle: Handler = async (event: SNSEvent, context: Context) => {
   try {
     const { Records: records } = event;
     if (!records) throw new Error('missing records');
