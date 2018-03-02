@@ -1,6 +1,5 @@
-import { Subscription, SubscriptionFilters } from './models';
+import { SubscriptionFilters } from './models';
 import * as _ from 'underscore';
-import { FilterOptionValue } from './models';
 
 export default function getFilterCombinations(filters: SubscriptionFilters) {
   const filterCounts: (number | null)[] = _.map(
