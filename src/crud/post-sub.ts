@@ -5,10 +5,12 @@ import { Subscription, JoiSubscriptionPostRequest } from '../util/models';
 import { default as createApiGatewayHandler, simpleError } from '../util/create-api-gateway-handler';
 import getFilterCombinations from '../util/get-filter-combinations';
 import { NOTIFICATION_LAMBDA_ARN, NOTIFICATION_TOPIC_ARN } from '../util/env';
+import * as Lambda from 'aws-sdk/clients/Lambda';
 import * as SNS from 'aws-sdk/clients/sns';
 import logger from '../util/logger';
 import toFilterPolicy from '../util/to-filter-policy';
 
+const lambda = new Lambda();
 const sns = new SNS();
 
 export const handle = createApiGatewayHandler(
@@ -44,14 +46,23 @@ export const handle = createApiGatewayHandler(
     }
 
     try {
+      // a lambda arn may only be subscribed to a topic once, so publish a new version/arn
+      const { FunctionArn } = await lambda.publishVersion({
+        FunctionName: NOTIFICATION_LAMBDA_ARN
+      }).promise();
+
+      if (!FunctionArn) {
+        throw new Error('function failed to publish');
+      }
+
       const { SubscriptionArn } = await sns.subscribe({
         Protocol: 'lambda',
         TopicArn: NOTIFICATION_TOPIC_ARN,
-        Endpoint: NOTIFICATION_LAMBDA_ARN
+        Endpoint: FunctionArn
       }).promise();
 
       if (!SubscriptionArn) {
-        throw new Error(`Subscription ARN not received after subscribing!`);
+        throw new Error('subscription ARN not received after subscribing!');
       }
 
       subscription.subscriptionArn = SubscriptionArn;
