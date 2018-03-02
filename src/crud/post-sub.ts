@@ -7,9 +7,11 @@ import {
 } from '../util/create-api-gateway-handler';
 import getFilterCombinations from '../util/get-filter-combinations';
 import logger from '../util/logger';
-import { createSNSSubscription } from '../util/sns-subscription-util';
+import SnsSubscriptionUtil from '../util/sns-subscription-util';
 import { NOTIFICATION_LAMBDA_NAME, NOTIFICATION_TOPIC_NAME } from '../util/env';
 import uuid = require('uuid');
+import * as Lambda from 'aws-sdk/clients/lambda';
+import * as SNS from 'aws-sdk/clients/sns';
 
 const TOO_MANY_COMBINATIONS = simpleError(
   400,
@@ -47,11 +49,13 @@ export const handle = createApiGatewayHandler(
       return TOO_MANY_COMBINATIONS;
     }
 
+    const subscriptionUtil = new SnsSubscriptionUtil({ lambda: new Lambda(), sns: new SNS() });
+
     subscription.id = uuid.v4();
 
     try {
       // a lambda arn may only be subscribed to a topic once, so publish a new version/arn
-      subscription.subscriptionArn = await createSNSSubscription(
+      subscription.subscriptionArn = await subscriptionUtil.createSNSSubscription(
         NOTIFICATION_LAMBDA_NAME,
         NOTIFICATION_TOPIC_NAME,
         subscription.id,
