@@ -23,10 +23,14 @@ export class Topic {
 
     console.log(`publishing message: ${attributes}`);
 
-    return sns.publish({
+    const { MessageId } = await sns.publish({
       Message: JSON.stringify(message),
       MessageAttributes: attributes,
       TopicArn: this.arn
     }).promise();
+
+    console.log(`published message:${MessageId}`);
+
+    return;
   }
 }

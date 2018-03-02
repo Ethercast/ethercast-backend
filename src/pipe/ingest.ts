@@ -10,7 +10,7 @@ const TOPIC_ARN = process.env.TOPIC_ARN;
 
 const producer = new Producer(TOPIC_ARN);
 
-const ingest = (producer: Producer) => async (message: Message) => {
+const ingest = async (message: Message) => {
   if (!message.Body) {
     throw new Error(`missing message body`);
   }

@@ -24,7 +24,7 @@ export class Queue {
 
   private async longPoll(numMessages: number = 10) {
     const response = await sqs.receiveMessage({
-      QueueUrl: await this.qurl,
+      QueueUrl: this.qurl,
       MaxNumberOfMessages: numMessages,
       WaitTimeSeconds: POLL_SECONDS,
     }).promise();
@@ -33,7 +33,7 @@ export class Queue {
 
   private async shortPoll() {
     const response = await sqs.receiveMessage({
-      QueueUrl: await this.qurl,
+      QueueUrl: this.qurl,
       MaxNumberOfMessages: 10,
       WaitTimeSeconds: 0,
     }).promise();
@@ -41,11 +41,15 @@ export class Queue {
   }
 
   private async delete(message: Message) {
-    return sqs.deleteMessage({
-      QueueUrl: await this.qurl,
-      ReceiptHandle: message.ReceiptHandle,
-    }).promise()
-      .catch((err) => console.warn('failed to delete message', message, err));
+    try {
+      if (message.ReceiptHandle === undefined) throw new Error('undefined receipt handle');
+      await sqs.deleteMessage({
+        QueueUrl: this.qurl,
+        ReceiptHandle: message.ReceiptHandle,
+      }).promise();
+    } catch (err) {
+      console.warn('failed to delete message', message, err);
+    }
   }
 
   private async handle(message: Message) {
@@ -69,24 +73,26 @@ export class Queue {
       count += messages.length;
     };
 
-    // long poll for triggering message to avoid any possible race
-    console.time(`polled`)
-    let messages = await this.longPoll(1);
-    console.timeEnd(`polled`)
-    if (!messages.length && !this.longPolling) console.warn('received no messages on first poll');
 
-    while(
+    let firstPoll = true;
+    let messages;
+    do {
+      console.time(`polled`)
+      // long poll for the triggering message to avoid any possible race
+      if (firstPoll) {
+        firstPoll = false;
+        messages = await this.longPoll(1);
+        if (!messages.length && !this.longPolling) console.warn('received no triggering message');
+      } else {
+        messages = await (this.longPolling ? this.longPoll() : this.shortPoll());
+      }
+      handle(messages);
+    } while (
       (this.getRemainingTime() > 2 * POLL_SECONDS * 1000) &&
       (this.longPolling || messages.length)
-    ) do {
-      handle(messages);
-      console.time(`polled`)
-      messages = await (this.longPolling ? this.longPoll() : this.shortPoll());
-      console.timeEnd(`polled`)
-    }
+    )
 
     if (messages.length) {
-      handle(messages);
       console.warn('quit with messages left in queue');
     }
   }
