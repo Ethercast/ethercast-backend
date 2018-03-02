@@ -73,6 +73,7 @@ export interface Receipt {
   id: string;
   subscriptionId: string;
   success: boolean;
+  status: number;
   timestamp: number;
   webhookUrl: string;
 }
