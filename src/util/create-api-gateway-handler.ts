@@ -72,12 +72,7 @@ export default function createApiGatewayHandler(handler: WrappedHandler): Handle
         } catch (err) {
           logger.error({ err }, 'request failed');
 
-          response = {
-            statusCode: 500,
-            body: {
-              message: 'Failed to handle your request. Please try again.'
-            }
-          };
+          response = simpleError(500, 'Failed to handle your request. Please try again.');
         }
       } catch (err) {
         logger.error({ err, body: event.body }, 'invalid request body');

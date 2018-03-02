@@ -1,12 +1,7 @@
 import crud from '../util/subscription-crud';
-import createApiGatewayHandler from '../util/create-api-gateway-handler';
+import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway-handler';
 
-export const SUBSCRIPTION_NOT_FOUND = {
-  statusCode: 404,
-  body: {
-    message: 'Subscription not found!'
-  }
-};
+export const SUBSCRIPTION_NOT_FOUND = simpleError(404, 'Subscription not found!');
 
 export const handle = createApiGatewayHandler(
   async ({ pathParameters: { id }, user }) => {
