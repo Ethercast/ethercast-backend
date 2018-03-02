@@ -3,6 +3,7 @@ import { Context, Handler, SNSEvent } from 'aws-lambda';
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from '../util/env';
 import { Subscription } from '../util/models';
+import { Log } from '@ethercast/model';
 import logger from '../util/logger';
 
 const client = new DocumentClient();
@@ -26,18 +27,40 @@ const lookup = async (subscriptionArn: string) => {
   return Items[0] as Subscription;
 };
 
-const ping = async (subscription: Subscription) => {
-  // TODO
-  return 0;
+const ping = async (subscription: Subscription, log: Log) => {
+  const options = {
+    method: 'POST',
+    headers: {
+      'user-agent': 'ethercast',
+      'x-ethercast-subscription-id': subscription.id,
+    },
+    uri: subscription.webhookUrl,
+    body: log,
+    json: true,
+    timeout: 1000,
+    simple: false,
+    resolveWithFullResponse: true,
+  };
+  return request(options)
+    .then((response) => {
+      const status = response.statusCode;
+      logger.info(`Delivered event to ${subscription.webhookUrl}: ${status}`);
+      const success = status >= 200 && status < 300;
+      return { success, status };
+    }, (err) => {
+      logger.warn(`Failed delivery to ${subscription.webhookUrl}: ${err.toString()}`);
+      return { success: false, status: 0 };
+    });
+  // TODO unsubscribe
 };
 
 const logReceipt = async (subscription: Subscription, result: number) => {
   // TODO
 };
 
-const egest = async (subscriptionArn: string, message: string) => {
+const egest = async (subscriptionArn: string, log: Log) => {
   const subscription = await lookup(subscriptionArn);
-  const result = await ping(subscription);
+  const result = await ping(subscription, log);
   await logReceipt(subscription, result);
 };
 
@@ -59,7 +82,8 @@ export const handle: Handler = async (event: SNSEvent, context: Context) => {
       const { Sns: { Message: message } } = record;
       if (!message) throw new Error('missing message');
 
-      await egest(subscriptionArn, message);
+      const log = JSON.parse(message);
+      await egest(subscriptionArn, log);
     } catch (err) {
       logger.error({record}, err.toString());
     }
