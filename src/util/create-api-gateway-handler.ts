@@ -21,7 +21,7 @@ export function simpleError(statusCode: number, message: string): Response {
 export const UNAUTHORIZED = simpleError(401, 'Unauthorized');
 export const BAD_REQUEST = simpleError(400, 'The request format was bad.');
 
-interface ValidatedAPIGatewayEvent extends APIGatewayEvent {
+type ValidatedAPIGatewayEvent = APIGatewayEvent & {
   pathParameters: { [name: string]: string };
   queryStringParameters: { [name: string]: string };
   user: string;

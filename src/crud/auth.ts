@@ -1,6 +1,6 @@
 import * as jwk from 'jsonwebtoken';
 import * as jwkToPem from 'jwk-to-pem';
-import * as fetch from 'isomorphic-fetch';
+import fetch from 'node-fetch';
 import { TOKEN_ISSUER } from '../util/env';
 import logger from '../util/logger';
 
@@ -51,7 +51,7 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
       // Make a request to the iss + .well-known/jwks.json URL:
       const response = await fetch(`${issuer}.well-known/jwks.json`);
 
-      if (response.statusCode !== 200) {
+      if (response.status !== 200) {
         unauthorized();
       } else {
         const body = await response.json();

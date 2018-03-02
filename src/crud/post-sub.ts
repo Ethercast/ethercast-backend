@@ -22,7 +22,7 @@ export const handle = createApiGatewayHandler(
     const subscription = value as Subscription;
 
     // validate that it has less than 100 combinations
-    const filterCombinations = getFilterCombinations(subscription);
+    const filterCombinations = getFilterCombinations(subscription.filters);
 
     if (filterCombinations === 0) {
       return {

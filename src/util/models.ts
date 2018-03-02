@@ -21,11 +21,11 @@ export const JoiSubscriptionPostRequest = Joi.object().keys({
   description: Joi.string().max(1024),
   webhookUrl: Joi.string().regex(urlRegex()).required(),
   filters: Joi.object({
-    address: filterOption(address).required(),
-    topic0: filterOption(topic).required(),
-    topic1: filterOption(topic).required(),
-    topic2: filterOption(topic).required(),
-    topic3: filterOption(topic).required()
+    address: filterOption(address),
+    topic0: filterOption(topic),
+    topic1: filterOption(topic),
+    topic2: filterOption(topic),
+    topic3: filterOption(topic)
   }).required()
 }).unknown(false);
 
