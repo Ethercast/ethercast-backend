@@ -54,8 +54,6 @@ export default class QueueDrainer {
       await this.handleMessage(message);
       await this.deleteMessage(message);
     }
-
-    logger.info({ messageCount: messages.length }, 'processing messages');
   };
 
   public async start() {
