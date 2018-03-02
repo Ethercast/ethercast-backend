@@ -6,19 +6,24 @@ import logger from '../util/logger';
 import { LOG_QUEUE_NAME, NOTIFICATION_TOPIC_NAME } from '../util/env';
 import * as SQS from 'aws-sdk/clients/sqs';
 import LogMessageProducer from '../util/log-message-producer';
-import { getTopicArn } from '../util/sns-subscription-util';
+import SnsSubscriptionUtil from '../util/sns-subscription-util';
+import * as SNS from 'aws-sdk/clients/sns';
+import * as Lambda from 'aws-sdk/clients/lambda';
 
 const sqs = new SQS();
+const sns = new SNS();
 
 export const handle: Handler = async (event, context: Context, cb?: Callback) => {
   if (!cb) {
     throw new Error('no callback passed in');
   }
 
+  const subscriptionUtil = new SnsSubscriptionUtil({ lambda: new Lambda(), sns });
+
   let producer: LogMessageProducer;
   try {
-    const notificationTopicArn = await getTopicArn(NOTIFICATION_TOPIC_NAME);
-    producer = new LogMessageProducer(notificationTopicArn);
+    const notificationTopicArn = await subscriptionUtil.getTopicArn(NOTIFICATION_TOPIC_NAME);
+    producer = new LogMessageProducer(sns, notificationTopicArn);
   } catch (err) {
     logger.error({ err }, 'failed to get ');
     cb(null, err);
@@ -48,7 +53,7 @@ export const handle: Handler = async (event, context: Context, cb?: Callback) =>
 
     logger.info({ QueueUrl }, 'dequeueing from queue');
 
-    const consumer = new QueueDrainer(QueueUrl, handleQueueMessage, context.getRemainingTimeInMillis);
+    const consumer = new QueueDrainer(sqs, QueueUrl, handleQueueMessage, context.getRemainingTimeInMillis);
     const count = await consumer.start();
 
     logger.info({ count }, 'removed count');

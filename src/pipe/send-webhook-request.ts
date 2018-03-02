@@ -1,5 +1,5 @@
 import 'source-map-support/register';
-import { Handler, SNSEvent } from 'aws-lambda';
+import { Callback, Context, Handler, SNSEvent } from 'aws-lambda';
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import fetch from 'node-fetch';
 import { Log } from '@ethercast/model';
@@ -21,7 +21,7 @@ async function getSubscriptionWithArn(subscriptionArn: string): Promise<Subscrip
       IndexName: 'BySubscriptionArn',
       Limit: 1,
       KeyConditionExpression: 'subscriptionArn = :subscriptionArn',
-      ExpressionAttributeValues: { ':subscriptionArn': subscriptionArn },
+      ExpressionAttributeValues: { ':subscriptionArn': subscriptionArn }
     }).promise();
 
     if (!Items || Items.length !== 1) {
@@ -121,13 +121,18 @@ const JoiSnsNotification = Joi.object({
   ).required()
 });
 
-export const handle: Handler = async (event: SNSEvent) => {
+export const handle: Handler = async (event: SNSEvent, context: Context, callback?: Callback) => {
+  if (!callback) {
+    throw new Error('invalid call to handler, missing callback');
+  }
+
   // Make sure it's an SNS message
   const { value, error } = JoiSnsNotification.validate(event, { allowUnknown: true });
 
   if (error) {
     logger.error({ error }, 'sns event failed joi validation');
-    throw new Error('sns event failed joi validation');
+    callback(new Error('sns event failed joi validation'));
+    return;
   }
 
   for (let i = 0; i < value.Records.length; ++i) {

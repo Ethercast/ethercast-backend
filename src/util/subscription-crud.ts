@@ -7,9 +7,6 @@ import uuid = require('uuid');
 const SUBSCRIPTIONS_USER_INDEX = 'ByUser';
 const WEBHOOK_RECEIPTS_SUBSCRIPTION_ID_INDEX = 'BySubscriptionId';
 
-type Diff<T extends string, U extends string> = ({[P in T]: P } & {[P in U]: never } & { [x: string]: never })[T];
-type Omit<T, K extends keyof T> = Pick<T, Diff<keyof T, K>>;
-
 const client = new DocumentClient();
 
 class SubscriptionCrud {

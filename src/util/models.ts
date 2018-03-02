@@ -72,8 +72,11 @@ export interface Subscription {
 export interface Receipt {
   id: string;
   subscriptionId: string;
-  success: boolean;
-  status: number;
   timestamp: number;
-  webhookUrl: string;
+  ttl: number;
+  result: {
+    url: string;
+    success: boolean;
+    statusCode: number;
+  };
 }

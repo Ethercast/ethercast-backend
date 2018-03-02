@@ -3,30 +3,28 @@ import logger from './logger';
 import { Log } from '@ethercast/model';
 import toMessageAttributes from './to-message-attributes';
 
-const sns = new SNS();
-
 export default class LogMessageProducer {
+  private sns: SNS;
   private topicArn: string;
 
-  constructor(topicArn: string) {
+  constructor(sns: SNS, topicArn: string) {
     this.topicArn = topicArn;
+    this.sns = sns;
 
-    logger.info({ topicArn }, `initializing topic`);
+    logger.debug({ topicArn }, `constructed log message producer`);
   }
 
   public async publish(log: Log) {
     const attributes = toMessageAttributes(log);
 
-    logger.info({ attributes }, `publishing message`);
+    logger.debug({ attributes }, `publishing message`);
 
-    const { MessageId } = await sns.publish({
+    const { MessageId } = await this.sns.publish({
       Message: JSON.stringify(log),
       MessageAttributes: attributes,
       TopicArn: this.topicArn
     }).promise();
 
-    logger.info({ MessageId }, `published message`);
-
-    return;
+    logger.debug({ MessageId }, `published message`);
   }
 }

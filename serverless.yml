@@ -14,7 +14,7 @@ custom:
   subscriptionsTable: ${self:custom.prefix}-subscriptions
   receiptsTable: ${self:custom.prefix}-receipts
   notificationTopicName: ${self:custom.prefix}-topic
-  notificationLambdaName: ${self:custom.prefix}-notify-lambda
+  sendWebhookLambdaName: ${self:custom.prefix}-send-webhook-lambda
   logQueueName: "serverless-blockstream-${self:custom.stage}-log-firehose.fifo"
   baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "2"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
@@ -54,7 +54,7 @@ provider:
     WEBHOOK_RECEIPTS_TABLE: ${self:custom.receiptsTable}
     TOKEN_ISSUER: ${self:custom.tokenIssuer}
     NOTIFICATION_TOPIC_NAME: ${self:custom.notificationTopicName}
-    NOTIFICATION_LAMBDA_NAME: ${self:custom.notificationLambdaName}
+    NOTIFICATION_LAMBDA_NAME: ${self:custom.sendWebhookLambdaName}
     LOG_QUEUE_NAME: ${self:custom.logQueueName}
   iamRoleStatements:
     - Effect: Allow
@@ -99,16 +99,16 @@ provider:
 
 functions:
   # backend
-  ingest:
-    handler: src/pipe/ingest.handle
+  drain-log-firehose-queue:
+    handler: src/pipe/drain-log-firehose-queue.handle
     reservedConcurrency: 1
     timeout: 60
     events:
       - schedule: rate(1 minute)
 
-  egest:
-    handler: src/pipe/egest.handle
-    name: ${self:custom.notificationLambdaName}
+  send-webhook-request:
+    handler: src/pipe/send-webhook-request.handle
+    name: ${self:custom.sendWebhookLambdaName}
     timeout: 2
 
   # CRUD

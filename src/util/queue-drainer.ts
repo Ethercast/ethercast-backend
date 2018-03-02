@@ -1,19 +1,20 @@
-import { SQS } from 'aws-sdk';
 import logger from './logger';
+import * as SQS from 'aws-sdk/clients/sqs';
 
 const POLL_SECONDS = 1;
-const sqs = new SQS();
 
 export type Message = SQS.Types.Message;
 export type MessageHandler = (message: Message) => Promise<void>;
 export type TimerFn = () => number;
 
 export default class QueueDrainer {
+  private sqs: SQS;
   private queueUrl: string;
   private handleMessage: MessageHandler;
   private getRemainingTime: TimerFn;
 
-  constructor(queueUrl: string, handleMessage: MessageHandler, getRemainingTime: TimerFn) {
+  constructor(sqs: SQS, queueUrl: string, handleMessage: MessageHandler, getRemainingTime: TimerFn) {
+    this.sqs = sqs;
     this.queueUrl = queueUrl;
     this.handleMessage = handleMessage;
     this.getRemainingTime = getRemainingTime;
@@ -22,7 +23,7 @@ export default class QueueDrainer {
   }
 
   private async poll(numMessages: number = 10) {
-    const response = await sqs.receiveMessage({
+    const response = await this.sqs.receiveMessage({
       QueueUrl: this.queueUrl,
       MaxNumberOfMessages: numMessages,
       WaitTimeSeconds: POLL_SECONDS
@@ -37,7 +38,7 @@ export default class QueueDrainer {
     }
 
     try {
-      await sqs.deleteMessage({
+      await this.sqs.deleteMessage({
         QueueUrl: this.queueUrl,
         ReceiptHandle: message.ReceiptHandle
       }).promise();
