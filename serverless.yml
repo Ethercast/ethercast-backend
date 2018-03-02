@@ -81,6 +81,7 @@ provider:
         - sns:SetSubscriptionAttributes
         - sns:GetTopicAttributes
         - sns:CreateTopic
+        - sns:Publish
       Resource:
         - "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
     - Effect: Allow
@@ -95,12 +96,6 @@ provider:
         - sqs:DeleteMessage
       Resource:
         - "arn:aws:sqs:#{AWS::Region}:#{AWS::AccountId}:${self:custom.logQueueName}"
-    - Effect: Allow
-      Action:
-        - sns:CreateTopic
-        - sns:Publish
-      Resource:
-        - "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
 
 functions:
   # backend
