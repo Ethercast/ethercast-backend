@@ -55,7 +55,8 @@ export const handler: Handler = async (event: SNSEvent, context: Context) => {
     throw new Error(`${err}: ${event}`);
   }
 
-  await Promise.all(event.Records.map(async (record) => {
+  for (let i = 0; i < event.Records.length; ++i) {
+    const record = event.Records[i];
     try {
       const { EventSubscriptionArn: subscriptionArn } = record;
       if (!subscriptionArn) throw new Error('missing subscription arn');
@@ -65,7 +66,7 @@ export const handler: Handler = async (event: SNSEvent, context: Context) => {
 
       await egest(subscriptionArn, message);
     } catch (err) {
-      throw new Error(`${err}: ${event}`);
+      logger.error({record}, err.toString());
     }
-  }));
+  }
 };
