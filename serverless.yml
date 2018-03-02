@@ -106,6 +106,11 @@ functions:
           - sqs:DeleteMessage
         Resource:
           - ${self:custom.logQueueArn}
+      - Effect: Allow
+        Action:
+          - sns:Publish
+        Resource:
+          - ${self:custom.notificationTopicArn}
 
   egest:
     handler: src/pipe/egest.handle
