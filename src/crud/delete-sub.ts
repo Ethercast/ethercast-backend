@@ -10,8 +10,7 @@ const crud = new SubscriptionCrud({ client: new DocumentClient() });
 
 export const handle = createApiGatewayHandler(
   async ({ pathParameters: { id }, user }) => {
-
-    const subscription = await SubscriptionCrud.get(id);
+    const subscription = await crud.get(id);
 
     if (!subscription || subscription.user !== user) {
       return simpleError(
@@ -20,14 +19,12 @@ export const handle = createApiGatewayHandler(
       );
     }
 
-    // remove the sns topic subscription
-    await sns.unsubscribe({
-      SubscriptionArn: subscription.subscriptionArn
-    }).promise();
+    await sns.unsubscribe({ SubscriptionArn: subscription.subscriptionArn }).promise();
+
     logger.info({ subscription }, 'unsubscribed subscription arn');
 
-    // deactivate the subscription
-    await SubscriptionCrud.deactivate(subscription.id);
+    await crud.deactivate(subscription.id);
+
     logger.info({ subscription }, `deactivated subscription`);
 
     return { statusCode: 204 };
