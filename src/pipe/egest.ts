@@ -1,7 +1,7 @@
 import 'source-map-support/register';
 import { Context, Handler, SNSEvent } from 'aws-lambda';
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
-import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from './env';
+import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from '../util/env';
 import { Subscription } from '../util/models';
 import logger from '../util/logger';
 
