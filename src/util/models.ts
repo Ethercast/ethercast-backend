@@ -69,14 +69,28 @@ export interface Subscription {
   subscriptionArn: string;
 }
 
-export interface Receipt {
+export interface WebhookReceiptResult {
+  statusCode: number;
+  success: boolean;
+}
+
+export interface WebhookReceipt {
   id: string;
   subscriptionId: string;
+  url: string;
   timestamp: number;
-  ttl: number;
-  result: {
-    url: string;
-    success: boolean;
-    statusCode: number;
-  };
+  result: WebhookReceiptResult;
 }
+
+export const JoiWebhookReceiptResult = Joi.object({
+  success: Joi.boolean().required(),
+  statusCode: Joi.number().required()
+});
+
+export const JoiWebhookReceipt = Joi.object({
+  id: Joi.string().uuid({ version: 'uuidv4' }).required(),
+  subscriptionId: Joi.string().uuid({ version: 'uuidv4' }).required(),
+  url: Joi.string().uri({ scheme: ['https', 'http'] }).required(),
+  timestamp: Joi.number().required(),
+  result: JoiWebhookReceiptResult.required()
+});
