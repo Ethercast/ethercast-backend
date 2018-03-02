@@ -4,7 +4,6 @@ import { Queue as Consumer, Message } from './queue';
 import { Log, mustBeValidLog } from '@ethercast/model';
 import toMessageAttributes from '../util/to-message-attributes';
 
-const BUFFER_MS = Number(process.env.BUFFER_MS);
 const QUEUE_URL = process.env.QUEUE_URL;
 const TOPIC_ARN = process.env.TOPIC_ARN;
 
@@ -24,7 +23,6 @@ const ingest = async (message: Message) => {
 };
 
 export const handler: Handler = async (event, context: Context) => {
-  const shouldQuit = () => context.getRemainingTimeInMillis() < BUFFER_MS;
   try {
     const consumer = new Consumer(QUEUE_URL, ingest, context.getRemainingTimeInMillis);
     const count = await consumer.dequeue();
