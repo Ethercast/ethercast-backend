@@ -1,10 +1,16 @@
 import 'source-map-support/register';
 import { Context, Handler, SNSEvent } from 'aws-lambda';
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
+import * as request from 'request-promise-native';
+import { Log } from '@ethercast/model';
 import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from '../util/env';
 import { Subscription } from '../util/models';
-import { Log } from '@ethercast/model';
 import logger from '../util/logger';
+
+interface Response {
+  success: boolean;
+  status: number;
+}
 
 const client = new DocumentClient();
 
@@ -54,7 +60,7 @@ const ping = async (subscription: Subscription, log: Log) => {
   // TODO unsubscribe
 };
 
-const logReceipt = async (subscription: Subscription, result: number) => {
+const logReceipt = async (subscription: Subscription, result: Status) => {
   // TODO
 };
 
