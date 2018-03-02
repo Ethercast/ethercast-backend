@@ -3,29 +3,33 @@ import { Context, Handler } from 'aws-lambda';
 import QueueDrainer, { Message } from '../util/queue-drainer';
 import { JoiLog } from '@ethercast/model';
 import logger from '../util/logger';
-import { LOG_QUEUE_NAME, NOTIFICATION_TOPIC_ARN } from '../util/env';
+import { LOG_QUEUE_NAME } from '../util/env';
 import * as SQS from 'aws-sdk/clients/sqs';
 import LogMessageProducer from '../util/log-message-producer';
+import { getTopicArn } from '../util/sns-add-subscription-util';
 
 const sqs = new SQS();
 
-const producer = new LogMessageProducer(NOTIFICATION_TOPIC_ARN);
-
-const handleQueueMessage = async (message: Message) => {
-  if (!message.Body) {
-    throw new Error(`missing message body`);
-  }
-
-  const { value: log, error } = JoiLog.validate(JSON.parse(message.Body), { allowUnknown: true });
-  if (error) {
-    logger.error({ error }, 'invalid log received');
-    throw new Error(`log failed validation`);
-  }
-
-  return producer.publish(log);
-};
 
 export const handle: Handler = async (event, context: Context) => {
+  const notificationTopicArn = await getTopicArn();
+  const producer = new LogMessageProducer(notificationTopicArn);
+
+  const handleQueueMessage = async (message: Message) => {
+    if (!message.Body) {
+      throw new Error(`missing message body`);
+    }
+
+    const { value: log, error } = JoiLog.validate(JSON.parse(message.Body), { allowUnknown: true });
+    if (error) {
+      logger.error({ error }, 'invalid log received');
+      throw new Error(`log failed validation`);
+    }
+
+    return producer.publish(log);
+  };
+
+
   try {
     const { QueueUrl } = await sqs.getQueueUrl({
       QueueName: LOG_QUEUE_NAME

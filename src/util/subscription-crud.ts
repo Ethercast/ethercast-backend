@@ -13,14 +13,12 @@ type Omit<T, K extends keyof T> = Pick<T, Diff<keyof T, K>>;
 const client = new DocumentClient();
 
 class SubscriptionCrud {
-  async create(subscription: Omit<Subscription, 'id' | 'user' | 'status' | 'timestamp'>, user: string): Promise<Subscription> {
-    logger.info({ subscription }, 'creating subscription');
-
-    const id = uuid.v4();
+  async save(subscription: Subscription, user: string): Promise<Subscription> {
+    logger.info({ subscription }, 'saving subscription to dynamo');
 
     const { error, value: toSave } = JoiSubscription.validate({
+      id: uuid.v4(),
       ...subscription,
-      id,
       user,
       timestamp: (new Date()).getTime(),
       status: SubscriptionStatus.active
@@ -38,7 +36,7 @@ class SubscriptionCrud {
 
     logger.info({ saved: toSave }, 'subscription created');
 
-    return this.get(id);
+    return this.get(toSave.id);
   }
 
   async get(id: string, ConsistentRead: boolean = true): Promise<Subscription> {

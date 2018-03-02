@@ -18,14 +18,14 @@ export function simpleError(statusCode: number, message: string): Response {
   };
 }
 
-export const UNAUTHORIZED = simpleError(401, 'Unauthorized');
+export const UNAUTHENTICATED = simpleError(401, 'Unauthorized');
 export const BAD_REQUEST = simpleError(400, 'The request format was bad.');
 
 type ValidatedAPIGatewayEvent = APIGatewayEvent & {
   pathParameters: { [name: string]: string };
   queryStringParameters: { [name: string]: string };
   user: string;
-  body: object | null
+  parsedBody: object | null
 }
 
 interface WrappedHandler {
@@ -37,6 +37,19 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*'
 };
 
+function processResponse(response: Response) {
+  return {
+    ...response,
+    headers: {
+      ...CORS_HEADERS,
+      ...response.headers
+    },
+    body: response.body ?
+      JSON.stringify(response.body) :
+      null
+  };
+}
+
 /**
  * This function takes care of the common functions that a handle checks and passes an easier-to-use event
  * to the child
@@ -44,53 +57,58 @@ const CORS_HEADERS = {
  * @returns {Handler}
  */
 export default function createApiGatewayHandler(handler: WrappedHandler): Handler {
-  return async function (event: APIGatewayEvent, context: Context, callback?: Callback): Promise<void> {
-    if (!callback) {
-      throw new Error('invalid caller');
+  return async function apiGatewayRequestHandler(event: APIGatewayEvent, context: Context, callback?: Callback): Promise<void> {
+    function respond(response: Response) {
+      if (!callback) {
+        throw new Error('missing callback');
+      }
+      callback(null, processResponse(response));
     }
 
     let response: Response;
 
     const { requestContext: { authorizer } } = event;
-    if (authorizer && authorizer.user && typeof authorizer.user === 'string') {
-      try {
-        const parsedBody = typeof event.body === 'string' ?
-          JSON.parse(event.body) :
-          null;
-
-        try {
-          response = await handler(
-            {
-              ...event,
-              pathParameters: event.pathParameters || {},
-              queryStringParameters: event.queryStringParameters || {},
-              user: authorizer.user,
-              body: parsedBody
-            },
-            context
-          );
-        } catch (err) {
-          logger.error({ err }, 'request failed');
-
-          response = simpleError(500, 'Failed to handle your request. Please try again.');
-        }
-      } catch (err) {
-        logger.error({ err, body: event.body }, 'invalid request body');
-        response = simpleError(400, 'Request body was not JSON!');
-      }
-    } else {
-      response = UNAUTHORIZED;
+    if (!authorizer || !authorizer.user) {
+      logger.error({ authorizer }, 'Unauthenticated request');
+      respond(UNAUTHENTICATED);
+      return;
     }
 
-    callback(null, {
-      ...response,
-      headers: {
-        ...CORS_HEADERS,
-        ...response.headers
-      },
-      body: response.body ?
-        JSON.stringify(response.body) :
-        null
-    });
+    const { user } = authorizer;
+
+    if (typeof user !== 'string') {
+      logger.error({ authorizer }, 'Missing user on authorizer');
+      respond(UNAUTHENTICATED);
+      return;
+    }
+
+    let parsedBody: object | null;
+    try {
+      parsedBody = typeof event.body === 'string' ?
+        JSON.parse(event.body) :
+        null;
+    } catch (err) {
+      logger.error({ err, body: event.body }, 'invalid request body');
+      respond(simpleError(400, 'Request body was not JSON!'));
+      return;
+    }
+
+    try {
+      respond(
+        await handler(
+          {
+            ...event,
+            pathParameters: event.pathParameters || {},
+            queryStringParameters: event.queryStringParameters || {},
+            user, parsedBody
+          },
+          context
+        )
+      );
+    } catch (err) {
+      logger.error({ err }, 'request failed');
+
+      respond(simpleError(500, 'Failed to handle your request. Please try again.'));
+    }
   };
 }
