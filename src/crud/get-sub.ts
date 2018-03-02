@@ -1,6 +1,7 @@
 import 'source-map-support/register';
 import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway-handler';
-import * as DynamoDB from 'aws-sdk/clients/dynamodb';import SubscriptionCrud from '../util/subscription-crud';
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
+import SubscriptionCrud from '../util/subscription-crud';
 
 export const SUBSCRIPTION_NOT_FOUND = simpleError(404, 'Subscription not found!');
 const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient() });
