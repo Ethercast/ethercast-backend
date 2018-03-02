@@ -8,6 +8,7 @@ import { Subscription } from '../util/models';
 import logger from '../util/logger';
 import * as Joi from 'joi';
 import uuid = require('uuid');
+import * as _ from 'underscore';
 
 const client = new DocumentClient();
 
@@ -92,7 +93,7 @@ async function saveReceipt(subscription: Subscription, receipt: NotificationRece
       Item: {
         id: receipt.receiptId,
         subscriptionId: subscription.id,
-        receipt: {}
+        receipt: _.omit(receipt, 'receiptId')
       }
     }).promise();
 
