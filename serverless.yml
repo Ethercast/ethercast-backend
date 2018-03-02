@@ -15,8 +15,11 @@ custom:
   subscriptionsTable: ${self:custom.prefix}-subscriptions
   receiptsTable: ${self:custom.prefix}-receipts
   notificationTopicName: ${self:custom.prefix}-topic
+  notificationTopicArn: "arn:aws:sns:${self:custom.region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
   notificationLambdaName: ${self:custom.prefix}-notify-lambda
-  logQueueArn: arn:aws:sqs:${self:custom.region}:#{AWS::AccountId}:${opt:logQueue, ""} # TODO: import from another stack? or just specify it.
+  notificationLambdaArn: "arn:aws:lambda:${self:custom.region}:#{AWS::AccountId}:function:${self:custom.notificationLambdaName}"
+  logQueueName: ${opt:logQueueName}
+  logQueueArn: "arn:aws:sqs:${self:custom.region}:#{AWS::AccountId}:${self:custom.logQueueName}"
   baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "2"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
   logLevel: ${opt:logLevel, "info"}
@@ -55,9 +58,9 @@ provider:
     SUBSCRIPTIONS_TABLE: ${self:custom.subscriptionsTable}
     WEBHOOK_RECEIPTS_TABLE: ${self:custom.receiptsTable}
     TOKEN_ISSUER: ${self:custom.tokenIssuer}
-    NOTIFICATION_TOPIC_ARN: "arn:aws:sns:${self:custom.region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
-    NOTIFICATION_LAMBDA_ARN: "arn:aws:lambda:${self:custom.region}:#{AWS::AccountId}:function:${self:custom.notificationLambdaName}"
-    LOG_QUEUE_ARN: ${self:custom.logQueueArn}
+    NOTIFICATION_TOPIC_ARN: ${self:custom.notificationTopicArn}
+    NOTIFICATION_LAMBDA_ARN: ${self:custom.notificationLambdaArn}
+    LOG_QUEUE_NAME: ${self:custom.logQueueName}
   iamRoleStatements:
     - Effect: Allow
       Action: # Gives permission to DynamoDB tables in a specific region
@@ -77,14 +80,14 @@ provider:
       Action: # Gives the poller permission to execute the drain q lambda
         - lambda:InvokeFunction
       Resource:
-        - "arn:aws:lambda:${self:custom.region}:#{AWS::AccountId}:function:${self:custom.notificationLambdaName}"
+        - ${self:custom.notificationLambdaArn}
     - Effect: Allow
       Action:
         - sns:Subscribe
         - sns:Unsubscribe
         - sns:ConfirmSubscription
       Resource:
-        - "arn:aws:sns:${self:custom.region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
+        - ${self:custom.notificationTopicArn}
 
 functions:
   # backend
@@ -97,9 +100,11 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
+          - sqs:GetQueueUrl
           - sqs:ReceiveMessage
           - sqs:DeleteMessage
-        Resource: ${self:custom.logQueueArn}
+        Resource:
+          - ${self:custom.logQueueArn}
 
   egest:
     handler: src/pipe/egest.handler

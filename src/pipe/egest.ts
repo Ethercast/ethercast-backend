@@ -1,4 +1,4 @@
-import { SNSEvent, Context, Handler } from 'aws-lambda';
+import { Context, Handler, SNSEvent } from 'aws-lambda';
 import { Message } from 'aws-sdk/clients/sqs';
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from './env';

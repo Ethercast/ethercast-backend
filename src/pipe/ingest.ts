@@ -1,15 +1,17 @@
 import { Context, Handler } from 'aws-lambda';
 import { Topic as Producer } from './topic';
-import { Queue as Consumer, Message } from './queue';
+import { Message, Queue as Consumer } from './queue';
 import { Log, mustBeValidLog } from '@ethercast/model';
 import toMessageAttributes from '../util/to-message-attributes';
+import logger from '../util/logger';
+import { LOG_QUEUE_NAME, NOTIFICATION_TOPIC_ARN } from '../util/env';
+import * as SQS from 'aws-sdk/clients/sqs';
 
-const QUEUE_URL = process.env.QUEUE_URL;
-const TOPIC_ARN = process.env.TOPIC_ARN;
+const sqs = new SQS();
 
-const producer = new Producer(TOPIC_ARN);
+const producer = new Producer(NOTIFICATION_TOPIC_ARN);
 
-const ingest = async (message: Message) => {
+const handleQueueMessage = async (message: Message) => {
   if (!message.Body) {
     throw new Error(`missing message body`);
   }
@@ -24,10 +26,22 @@ const ingest = async (message: Message) => {
 
 export const handler: Handler = async (event, context: Context) => {
   try {
-    const consumer = new Consumer(QUEUE_URL, ingest, context.getRemainingTimeInMillis);
+    const { QueueUrl } = await sqs.getQueueUrl({
+      QueueName: LOG_QUEUE_NAME
+    }).promise();
+
+    if (!QueueUrl) {
+      throw new Error(`could not get queue url for name: ${LOG_QUEUE_NAME}`);
+    }
+
+    logger.info({ QueueUrl }, 'dequeueing from queue');
+
+    const consumer = new Consumer(QueueUrl, handleQueueMessage, context.getRemainingTimeInMillis);
     const count = await consumer.dequeue();
+
+    logger.info({ count }, 'removed count');
   } catch (err) {
-    console.error('failing queue', err);
+    logger.error({ err }, 'failing queue');
     throw err;
   }
 };

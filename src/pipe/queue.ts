@@ -1,4 +1,5 @@
 import { SQS } from 'aws-sdk';
+import logger from '../util/logger';
 
 const POLL_SECONDS = 1;
 const sqs = new SQS();
@@ -13,12 +14,17 @@ export class Queue {
   private getRemainingTime: TimerFn;
   private longPolling: boolean;
 
-  constructor(queue: string, fn: MessageFn, getRemainingTime: TimerFn, longPolling: boolean = true) {
-    this.qurl = queue;
+  constructor(queueUrl: string, fn: MessageFn, getRemainingTime: TimerFn, longPolling: boolean = true) {
+    this.qurl = queueUrl;
     this.fn = fn;
     this.getRemainingTime = getRemainingTime;
     this.longPolling = longPolling;
-    console.log(`initializing ${this.longPolling ? 'long' : 'short'}-polling queue:${this.qurl}`);
+
+    logger.info({
+      longPolling,
+      queueUrl
+    }, `initializing polling queue`);
+
     if (!this.fn) throw new Error('missing fn');
   }
 
@@ -26,7 +32,7 @@ export class Queue {
     const response = await sqs.receiveMessage({
       QueueUrl: this.qurl,
       MaxNumberOfMessages: numMessages,
-      WaitTimeSeconds: POLL_SECONDS,
+      WaitTimeSeconds: POLL_SECONDS
     }).promise();
     return response.Messages || [];
   }
@@ -35,7 +41,7 @@ export class Queue {
     const response = await sqs.receiveMessage({
       QueueUrl: this.qurl,
       MaxNumberOfMessages: 10,
-      WaitTimeSeconds: 0,
+      WaitTimeSeconds: 0
     }).promise();
     return response.Messages || [];
   }
@@ -45,10 +51,10 @@ export class Queue {
       if (message.ReceiptHandle === undefined) throw new Error('undefined receipt handle');
       await sqs.deleteMessage({
         QueueUrl: this.qurl,
-        ReceiptHandle: message.ReceiptHandle,
+        ReceiptHandle: message.ReceiptHandle
       }).promise();
     } catch (err) {
-      console.warn('failed to delete message', message, err);
+      logger.warn({ err, message }, 'failed to delete message');
     }
   }
 
@@ -56,7 +62,7 @@ export class Queue {
     try {
       await this.fn(message);
     } catch (err) {
-      console.warn('failed to invoke fn', message, err);
+      logger.warn({ message, err }, 'failed to invoke fn');
       throw err;
     }
 
@@ -66,10 +72,12 @@ export class Queue {
   public async dequeue() {
     let count = 0;
     const handle = async (messages: Message[]) => {
-      console.log(`received ${messages.length} messages`);
+      logger.info({ messageCount: messages.length }, `received messages`);
+
       console.time(`handled ${messages.length} messages`);
       await messages.map(this.handle);
       console.timeEnd(`handled ${messages.length} messages`);
+
       count += messages.length;
     };
 
@@ -77,7 +85,7 @@ export class Queue {
     let firstPoll = true;
     let messages;
     do {
-      console.time(`polled`)
+      console.time(`polled`);
       // long poll for the triggering message to avoid any possible race
       if (firstPoll) {
         firstPoll = false;
@@ -90,10 +98,10 @@ export class Queue {
     } while (
       (this.getRemainingTime() > 2 * POLL_SECONDS * 1000) &&
       (this.longPolling || messages.length)
-    )
+      );
 
     if (messages.length) {
-      console.warn('quit with messages left in queue');
+      logger.warn({ messageCount: messages.length }, 'quit with messages left in queue');
     }
   }
 }
