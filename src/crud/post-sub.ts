@@ -1,26 +1,15 @@
-import { crud, Subscription } from '../util/subscription-crud';
+import crud from '../util/subscription-crud';
 import * as Joi from 'joi';
-import { SubscriptionPostRequest } from '../util/models';
-import { default as createProxyHandler, errorResponse } from '../util/create-handler';
-import logger from '../util/logger';
+import { Subscription, JoiSubscriptionPostRequest } from '../util/models';
+import { default as createApiGatewayHandler } from '../util/create-api-gateway-handler';
+import getFilterCombinations from '../util/get-filter-combinations';
 
-export const handle = createProxyHandler(
-  async (event) => {
-    // TODO: abstract this repetitive junk out of the handle calls
-    const { requestContext: { authorizer: { user } } } = event as any;
-
-    let parsed: object;
-    try {
-      parsed = JSON.parse(event.body || '');
-    } catch (err) {
-      logger.info({ err }, `failed parsing post request`);
-      return errorResponse(400, `invalid request body`);
-    }
-
+export const handle = createApiGatewayHandler(
+  async ({ user, body }) => {
     // validate the request
-    const { error, value } = Joi.validate(parsed, SubscriptionPostRequest, { convert: true });
+    const { error, value } = Joi.validate(body, JoiSubscriptionPostRequest, { convert: true });
 
-    if (error && error.details.length) {
+    if (error || !value) {
       return {
         statusCode: 422,
         body: {
@@ -30,8 +19,28 @@ export const handle = createProxyHandler(
       };
     }
 
-    // save the new subscription
     const subscription = value as Subscription;
+
+    // validate that it has less than 100 combinations
+    const filterCombinations = getFilterCombinations(subscription);
+
+    if (filterCombinations === 0) {
+      return {
+        statusCode: 400,
+        body: {
+          message: 'Firehose log filters are not yet supported. Sorry, you must select at least one filter.'
+        }
+      };
+    } else if (filterCombinations > 100) {
+      return {
+        statusCode: 400,
+        body: {
+          message: 'We cannot support filters with greater than 100 combinations. Please create multiple filters for your use case.'
+        }
+      };
+    }
+
+    // save the new subscription
     const saved = await crud.create(subscription, user);
 
     return {

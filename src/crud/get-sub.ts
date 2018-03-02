@@ -1,29 +1,23 @@
-import { APIGatewayEvent, Handler } from 'aws-lambda';
-import { crud } from '../util/subscription-crud';
-import createProxyHandler from '../util/create-handler';
+import crud from '../util/subscription-crud';
+import createApiGatewayHandler from '../util/create-api-gateway-handler';
 
-export const handle = createProxyHandler(
-  async (event) => {
-    const { pathParameters } = event;
-    if (!pathParameters) {
-      throw new Error('missing path parameters');
-    }
+export const SUBSCRIPTION_NOT_FOUND = {
+  statusCode: 404,
+  body: {
+    message: 'Subscription not found!'
+  }
+};
 
-    const { requestContext: { authorizer: { user } } } = event as any;
-    if (!user) {
-      return {
-        statusCode: 400
-      };
-    }
-
-    const { id } = pathParameters;
+export const handle = createApiGatewayHandler(
+  async ({ pathParameters: { id }, user }) => {
     if (!id) {
       throw new Error('missing id in path');
     }
 
     const subscription = await crud.get(id);
-    if (subscription.user !== user) {
-      throw new Error(`invalid subscription id`);
+
+    if (!subscription || subscription.user !== user) {
+      return SUBSCRIPTION_NOT_FOUND;
     }
 
     return {

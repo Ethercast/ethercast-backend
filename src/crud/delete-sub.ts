@@ -1,23 +1,16 @@
-import { crud } from '../util/subscription-crud';
-import { BAD_REQUEST, default as createProxyHandler, errorResponse, UNAUTHORIZED } from '../util/create-handler';
+import crud from '../util/subscription-crud';
+import { default as createApiGatewayHandler, simpleError } from '../util/create-api-gateway-handler';
 import logger from '../util/logger';
 
-export const handle = createProxyHandler(
-  async (event) => {
-    if (!event.pathParameters || !event.pathParameters.id) {
-      return BAD_REQUEST;
-    }
+export const handle = createApiGatewayHandler(
+  async ({ pathParameters: { id }, user }) => {
 
-    if (!event.requestContext.authorizer || !event.requestContext.authorizer.user) {
-      return UNAUTHORIZED;
-    }
+    const subscription = await crud.get(id);
 
-    const subscription = await crud.get(event.pathParameters.id);
-
-    if (!subscription || subscription.user !== event.requestContext.authorizer.user) {
-      return errorResponse(
+    if (!subscription || subscription.user !== user) {
+      return simpleError(
         404,
-        'Invalid subscription ID'
+        'Subscription not found!'
       );
     }
 
