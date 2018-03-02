@@ -1,18 +1,28 @@
 import 'source-map-support/register';
-import { Context, Handler } from 'aws-lambda';
+import { Callback, Context, Handler } from 'aws-lambda';
 import QueueDrainer, { Message } from '../util/queue-drainer';
 import { JoiLog } from '@ethercast/model';
 import logger from '../util/logger';
-import { LOG_QUEUE_NAME } from '../util/env';
+import { LOG_QUEUE_NAME, NOTIFICATION_TOPIC_NAME } from '../util/env';
 import * as SQS from 'aws-sdk/clients/sqs';
 import LogMessageProducer from '../util/log-message-producer';
 import { getTopicArn } from '../util/sns-subscription-util';
 
 const sqs = new SQS();
 
-export const handle: Handler = async (event, context: Context) => {
-  const notificationTopicArn = await getTopicArn();
-  const producer = new LogMessageProducer(notificationTopicArn);
+export const handle: Handler = async (event, context: Context, cb?: Callback) => {
+  if (!cb) {
+    throw new Error('no callback passed in');
+  }
+
+  let producer: LogMessageProducer;
+  try {
+    const notificationTopicArn = await getTopicArn(NOTIFICATION_TOPIC_NAME);
+    producer = new LogMessageProducer(notificationTopicArn);
+  } catch (err) {
+    logger.error({ err }, 'failed to get ');
+    cb(null, err);
+  }
 
   const handleQueueMessage = async (message: Message) => {
     if (!message.Body) {

@@ -3,7 +3,7 @@ import { Schema } from 'joi';
 import urlRegex = require('url-regex');
 
 const address = Joi.string().regex(/^0x[0-9a-fA-F]{40}$/).lowercase();
-const topic = Joi.string().regex(/^0x[0-9a-f]{64}$/).lowercase();
+const topic = Joi.string().regex(/^0x[0-9a-fA-F]{64}$/).lowercase();
 
 function filterOption(item: Schema) {
   return Joi.alternatives(
