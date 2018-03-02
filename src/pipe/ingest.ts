@@ -17,7 +17,13 @@ const handleQueueMessage = async (message: Message) => {
     throw new Error(`missing message body`);
   }
 
-  const log: Log = mustBeValidLog(JSON.parse(message.Body));
+  let log: Log;
+  try {
+    log = mustBeValidLog(JSON.parse(message.Body));
+  } catch (err) {
+    logger.error({Body: message.Body}, err.toString());
+    throw err;
+  }
 
   // get attributes of the log
   const attributes = toMessageAttributes(log);
