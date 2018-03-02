@@ -66,23 +66,24 @@ provider:
         - dynamodb:PutItem
         - dynamodb:UpdateItem
         - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:us-east-1:*:*"
+      Resource:
+        - "arn:aws:dynamodb:${self:custom.region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}"
+        - "arn:aws:dynamodb:${self:custom.region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}/ByUser"
+        - "arn:aws:dynamodb:${self:custom.region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}/BySubscriptionArn"
+        - "arn:aws:dynamodb:${self:custom.region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}"
+        - "arn:aws:dynamodb:${self:custom.region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}/BySubscriptionId"
     - Effect: Allow
       Action: # Gives the poller permission to execute the drain q lambda
         - lambda:InvokeFunction
       Resource:
         - "arn:aws:lambda:${self:custom.region}:#{AWS::AccountId}:function:${self:custom.notificationLambdaName}"
     - Effect: Allow
-      Action: # Gives permission to create sns topics
-        - sns:CreateTopic
+      Action:
         - sns:Subscribe
         - sns:Unsubscribe
         - sns:ConfirmSubscription
-      Resource: "arn:aws:sns:${self:custom.region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
-    - Effect: Allow
-      Action:
-        - sqs:SendMessage
-      Resource: "arn:aws:sqs:us-east-1:*:*" # arn:aws:sqs:region:account-id:queuename
+      Resource:
+        - "arn:aws:sns:${self:custom.region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
 
 functions:
   # backend
