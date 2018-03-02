@@ -10,7 +10,7 @@ function fakeLog(address: string, ...topics: string[]): Log {
   } as Log;
 }
 
-describe('toMessageAttributes', () => {
+describe('#toMessageAttributes', () => {
 
   it('extracts attributes from logs', () => {
     expect(

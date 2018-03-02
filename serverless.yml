@@ -57,7 +57,7 @@ provider:
     TOKEN_ISSUER: ${self:custom.tokenIssuer}
     NOTIFICATION_TOPIC_ARN: "arn:aws:sns:${self:custom.region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
     NOTIFICATION_LAMBDA_ARN: "arn:aws:lambda:${self:custom.region}:#{AWS::AccountId}:function:${self:custom.notificationLambdaName}"
-  iamRoleStatements: # TODO: restrict IAM using serverless-iam-roles-per-function
+  iamRoleStatements:
     - Effect: Allow
       Action: # Gives permission to DynamoDB tables in a specific region
         - dynamodb:Query
