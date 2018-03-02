@@ -15,6 +15,7 @@ custom:
   subscriptionsTable: ${self:custom.prefix}-subscriptions
   receiptsTable: ${self:custom.prefix}-receipts
   notificationTopicName: ${self:custom.prefix}-topic
+  notificationLambdaName: ${self:custom.prefix}-notify-lambda
   logQueueArn: ${opt:logQueueArn, ""} #TODO: import from another stack? or just specify it.
   baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "2"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
@@ -54,7 +55,8 @@ provider:
     SUBSCRIPTIONS_TABLE: ${self:custom.subscriptionsTable}
     WEBHOOK_RECEIPTS_TABLE: ${self:custom.receiptsTable}
     TOKEN_ISSUER: ${self:custom.tokenIssuer}
-    NOTIFICATION_TOPIC_NAME: ${self:custom.notificationTopicName}
+    NOTIFICATION_TOPIC_ARN: "arn:aws:sns:${self:custom.region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
+    NOTIFICATION_LAMBDA_ARN: "arn:aws:lambda:${self:custom.region}:#{AWS::AccountId}:function:${self:custom.notificationLambdaName}"
   iamRoleStatements: # TODO: restrict IAM using serverless-iam-roles-per-function
     - Effect: Allow
       Action: # Gives permission to DynamoDB tables in a specific region
@@ -66,12 +68,17 @@ provider:
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:us-east-1:*:*"
     - Effect: Allow
+      Action: # Gives the poller permission to execute the drain q lambda
+        - lambda:InvokeFunction
+      Resource:
+        - "arn:aws:lambda:${self:custom.region}:#{AWS::AccountId}:function:${self:custom.notificationLambdaName}"
+    - Effect: Allow
       Action: # Gives permission to create sns topics
         - sns:CreateTopic
         - sns:Subscribe
         - sns:Unsubscribe
         - sns:ConfirmSubscription
-      Resource: "arn:aws:sns:us-east-1:*:*"
+      Resource: "arn:aws:sns:${self:custom.region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
     - Effect: Allow
       Action:
         - sqs:SendMessage
@@ -94,6 +101,7 @@ functions:
 
   egest:
     handler: src/pipe/egest.handler
+    name: notificationLambdaName
     timeout: 2
 
   # CRUD

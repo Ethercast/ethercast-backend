@@ -1,7 +1,7 @@
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from './env';
 import logger from './logger';
-import { Receipt, Subscription, SubscriptionStatus } from './models';
+import { JoiSubscription, Receipt, Subscription, SubscriptionStatus } from './models';
 import uuid = require('uuid');
 
 const SUBSCRIPTIONS_USER_INDEX = 'ByUser';
@@ -18,16 +18,25 @@ class SubscriptionCrud {
 
     const id = uuid.v4();
 
+    const { error, value: toSave } = JoiSubscription.validate({
+      ...subscription,
+      id,
+      user,
+      timestamp: (new Date()).getTime(),
+      status: SubscriptionStatus.active
+    });
+
+    if (error) {
+      logger.error({ validationError: error }, 'subscription failed pre-save validation');
+      throw new Error('Validation error encountered while saving subscription');
+    }
+
     await client.put({
       TableName: SUBSCRIPTIONS_TABLE,
-      Item: {
-        ...subscription,
-        id,
-        user,
-        timestamp: (new Date()).getTime(),
-        status: SubscriptionStatus.active
-      }
+      Item: toSave
     }).promise();
+
+    logger.info({ saved: toSave }, 'subscription created');
 
     return this.get(id);
   }

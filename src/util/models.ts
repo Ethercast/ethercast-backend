@@ -36,7 +36,8 @@ export const JoiSubscription = JoiSubscriptionPostRequest.keys({
   id: Joi.string().uuid({ version: 'uuidv4' }).required(),
   timestamp: Joi.number().required(),
   user: Joi.string().required(),
-  status: Joi.string().valid('active', 'pending', 'deactivated')
+  status: Joi.string().valid('active', 'pending', 'deactivated'),
+  subscriptionArn: Joi.string().required()
 });
 
 export enum SubscriptionStatus {
