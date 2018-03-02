@@ -9,4 +9,6 @@ export const WEBHOOK_RECEIPTS_TABLE: string = env.get('WEBHOOK_RECEIPTS_TABLE').
 export const NOTIFICATION_TOPIC_ARN: string = env.get('NOTIFICATION_TOPIC_ARN').required().asString();
 export const NOTIFICATION_LAMBDA_ARN: string = env.get('NOTIFICATION_LAMBDA_ARN').required().asString();
 
+export const LOG_QUEUE_ARN: string = env.get('LOG_QUEUE_ARN').required().asString();
+
 export const TOKEN_ISSUER: string = env.get('TOKEN_ISSUER').required().asUrlString();

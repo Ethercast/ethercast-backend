@@ -16,7 +16,7 @@ custom:
   receiptsTable: ${self:custom.prefix}-receipts
   notificationTopicName: ${self:custom.prefix}-topic
   notificationLambdaName: ${self:custom.prefix}-notify-lambda
-  logQueueArn: ${opt:logQueueArn, ""} #TODO: import from another stack? or just specify it.
+  logQueueArn: "arn:aws:sqs:${self:custom.region}:#{AWS::AccountId}:${opt:logQueue, ""}" #TODO: import from another stack? or just specify it.
   baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "2"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
   logLevel: ${opt:logLevel, "info"}
@@ -57,6 +57,7 @@ provider:
     TOKEN_ISSUER: ${self:custom.tokenIssuer}
     NOTIFICATION_TOPIC_ARN: "arn:aws:sns:${self:custom.region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
     NOTIFICATION_LAMBDA_ARN: "arn:aws:lambda:${self:custom.region}:#{AWS::AccountId}:function:${self:custom.notificationLambdaName}"
+    LOG_QUEUE_ARN: ${self:custom.logQueueArn}
   iamRoleStatements:
     - Effect: Allow
       Action: # Gives permission to DynamoDB tables in a specific region
