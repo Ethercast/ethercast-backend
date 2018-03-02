@@ -45,18 +45,26 @@ const ping = async (subscription: Subscription, log: Log) => {
   })
     .then((response) => {
       const status = response.status;
-      logger.info(`Delivered event to ${subscription.webhookUrl}: ${status}`);
+      logger.info(`delivered event to ${subscription.webhookUrl}: ${status}`);
       const success = status >= 200 && status < 300;
       return { success, status };
     }, (err) => {
-      logger.warn(`Failed delivery to ${subscription.webhookUrl}: ${err.toString()}`);
+      logger.warn(err, `delivery failed to ${subscription.webhookUrl}: ${err.toString()}`);
       return { success: false, status: 0 };
     });
-  // TODO unsubscribe
 };
 
-const logReceipt = async (subscription: Subscription, result: Response) => {
-  // TODO
+const logReceipt = async (subscription: Subscription, res: Response) => {
+  return client.put({
+    TableName: WEBHOOK_RECEIPTS_TABLE,
+    Item: {
+    }
+  }).promise()
+    .then(() => {
+      logger.info(`logged receipt for subscription:${subscription.id}, success:${res.success}`)
+    }, (err) => {
+      logger.warn(err, `failed to log receipt for subscription${subscription.id}`);
+    });
 };
 
 const egest = async (subscriptionArn: string, log: Log) => {
