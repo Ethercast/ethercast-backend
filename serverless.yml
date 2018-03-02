@@ -103,7 +103,7 @@ functions:
 
   egest:
     handler: src/pipe/egest.handler
-    name: notificationLambdaName
+    name: ${self:custom.notificationLambdaName}
     timeout: 2
 
   # CRUD
