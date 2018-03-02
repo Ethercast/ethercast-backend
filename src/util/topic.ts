@@ -1,6 +1,6 @@
 import { SNS } from 'aws-sdk';
 import { MessageAttributeMap } from 'aws-sdk/clients/sns';
-import logger from '../util/logger';
+import logger from './logger';
 
 const sns = new SNS();
 
