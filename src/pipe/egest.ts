@@ -1,17 +1,34 @@
 import { SNSEvent, Context, Handler } from 'aws-lambda';
 import { Message } from 'aws-sdk/clients/sqs';
+import { DocumentClient } from 'aws-sdk/clients/dynamodb';
+import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from './env';
+import { Receipt, Subscription, SubscriptionStatus } from '../util/models';
+import logger from '../util/logger';
 
 interface Event {
   subscription_id: string;
   webhook_url: string;
 }
 
-interface Subscription {
-}
+const client = new DocumentClient();
 
 const lookup = async (subscriptionArn: string) => {
-  // TODO
-  return {};
+  logger.info({subscriptionArn}, 'querying subscription');
+  const { Items } = await client.query({
+    TableName: SUBSCRIPTIONS_TABLE,
+    IndexName: 'BySubscriptionArn',
+    Limit: 1,
+    KeyConditionExpression: 'HashKey = :hkey',
+    ExpressionAttributeValues: { ':hkey': subscriptionArn },
+  }).promise();
+
+  logger.info({Items}, 'found subscription');
+  if (!Items || Items.length !== 1) {
+    logger.error({Items}, 'strange query result');
+    throw('strange query result, expected 1 item');
+  }
+
+  return Items[0] as Subscription;
 };
 
 const ping = async (subscription: Subscription) => {
