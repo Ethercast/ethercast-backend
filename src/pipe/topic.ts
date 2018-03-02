@@ -5,12 +5,12 @@ import logger from '../util/logger';
 const sns = new SNS();
 
 export class Topic {
-  private arn: string;
+  private topicArn: string;
 
-  constructor(arn: string) {
-    this.arn = arn;
+  constructor(topicArn: string) {
+    this.topicArn = topicArn;
 
-    logger.info({ arn: this.arn }, `initializing topic`);
+    logger.info({ topicArn }, `initializing topic`);
   }
 
   public async publish(attributes: MessageAttributeMap, message: Object) {
@@ -19,7 +19,7 @@ export class Topic {
     const { MessageId } = await sns.publish({
       Message: JSON.stringify(message),
       MessageAttributes: attributes,
-      TopicArn: this.arn
+      TopicArn: this.topicArn
     }).promise();
 
     logger.info({ MessageId }, `published message`);

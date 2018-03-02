@@ -43,34 +43,28 @@ export class Queue {
     return response.Messages || [];
   }
 
-  private async delete(message: Message) {
+  private async deleteMessage(message: Message) {
+    if (message.ReceiptHandle === undefined) {
+      throw new Error('undefined receipt handle');
+    }
+
     try {
-      if (message.ReceiptHandle === undefined) throw new Error('undefined receipt handle');
       await sqs.deleteMessage({
         QueueUrl: this.queueUrl,
         ReceiptHandle: message.ReceiptHandle
       }).promise();
     } catch (err) {
-      logger.warn({ err, message }, 'failed to delete message');
+      logger.error({ err, message }, 'failed to delete message');
     }
-  }
-
-  private async handle(message: Message) {
-    try {
-      await this.handleMessage(message);
-    } catch (err) {
-      logger.warn({ message, err }, 'failed to invoke handleMessage');
-      throw err;
-    }
-
-    await this.delete(message);
   }
 
   processMessages = async (messages: Message[]) => {
     logger.info({ messageCount: messages.length }, `processing messages`);
 
     for (let i = 0; i < messages.length; i++) {
-      await this.handleMessage(messages[i]);
+      const message: Message = messages[i];
+      await this.handleMessage(message);
+      await this.deleteMessage(message);
     }
 
     logger.info({ messageCount: messages.length }, 'processing messages');
