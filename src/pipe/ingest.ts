@@ -10,7 +10,6 @@ import { getTopicArn } from '../util/sns-subscription-util';
 
 const sqs = new SQS();
 
-
 export const handle: Handler = async (event, context: Context) => {
   const notificationTopicArn = await getTopicArn();
   const producer = new LogMessageProducer(notificationTopicArn);
@@ -31,9 +30,7 @@ export const handle: Handler = async (event, context: Context) => {
 
 
   try {
-    const { QueueUrl } = await sqs.getQueueUrl({
-      QueueName: LOG_QUEUE_NAME
-    }).promise();
+    const { QueueUrl } = await sqs.getQueueUrl({ QueueName: LOG_QUEUE_NAME }).promise();
 
     if (!QueueUrl) {
       throw new Error(`could not get queue url for name: ${LOG_QUEUE_NAME}`);
