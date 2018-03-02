@@ -1,7 +1,7 @@
 import logger from './logger';
 import * as SQS from 'aws-sdk/clients/sqs';
 
-const POLL_SECONDS = 1;
+const POLL_SECONDS = 3;
 
 export type Message = SQS.Types.Message;
 export type MessageHandler = (message: Message) => Promise<void>;
@@ -48,7 +48,7 @@ export default class QueueDrainer {
   }
 
   processMessages = async (messages: Message[]) => {
-    logger.info({ messageCount: messages.length }, `processing messages`);
+    logger.debug({ messageCount: messages.length }, `processing messages`);
 
     for (let i = 0; i < messages.length; i++) {
       const message: Message = messages[i];
@@ -65,7 +65,7 @@ export default class QueueDrainer {
     while (this.getRemainingTime() > 2 * POLL_SECONDS * 1000) {
       const messages = await this.poll();
 
-      logger.info({ pollCount, processedMessageCount, messageCount: messages.length }, `polled queue`);
+      logger.debug({ pollCount, processedMessageCount, messageCount: messages.length }, `polled queue`);
 
       await this.processMessages(messages);
 
@@ -74,6 +74,6 @@ export default class QueueDrainer {
       pollCount++;
     }
 
-    logger.info({ processedMessageCount, pollCount }, 'finished draining queue');
+    logger.debug({ processedMessageCount, pollCount }, 'finished draining queue');
   }
 }

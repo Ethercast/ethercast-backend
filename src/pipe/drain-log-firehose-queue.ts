@@ -25,7 +25,7 @@ export const handle: Handler = async (event, context: Context, cb?: Callback) =>
     const notificationTopicArn = await subscriptionUtil.getTopicArn(NOTIFICATION_TOPIC_NAME);
     producer = new LogMessageProducer(sns, notificationTopicArn);
   } catch (err) {
-    logger.error({ err }, 'failed to get ');
+    logger.error({ err }, 'failed to get notification topic arn');
     cb(null, err);
   }
 
@@ -40,7 +40,7 @@ export const handle: Handler = async (event, context: Context, cb?: Callback) =>
       throw new Error(`log failed validation`);
     }
 
-    return producer.publish(log);
+    await producer.publish(log);
   };
 
 
