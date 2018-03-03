@@ -72,6 +72,7 @@ export interface Subscription {
 export interface WebhookReceiptResult {
   statusCode: number;
   success: boolean;
+  error?: string;
 }
 
 export interface WebhookReceipt {

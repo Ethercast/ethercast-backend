@@ -1,5 +1,5 @@
 import logger from './logger';
-import * as SQS from 'aws-sdk/clients/sqs';
+import { SQS } from 'aws-sdk';
 import _ = require('underscore');
 
 export type Message = SQS.Types.Message;

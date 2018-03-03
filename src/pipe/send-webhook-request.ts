@@ -7,13 +7,14 @@ import logger from '../util/logger';
 import * as Joi from 'joi';
 import SubscriptionCrud from '../util/subscription-crud';
 import { DynamoDB, SNS } from 'aws-sdk';
+import * as _ from 'underscore';
 
 const client = new DynamoDB.DocumentClient();
 const sns = new SNS();
-const crud = new SubscriptionCrud({ client });
+const crud = new SubscriptionCrud({ client, logger });
 
-async function notifyEndpoint(subscription: Subscription, log: Log): Promise<WebhookReceiptResult> {
-  const meta = { txHash: log.transactionHash, logIndex: log.logIndex };
+async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription, log: Log): Promise<WebhookReceiptResult> {
+  const meta = _.pick(log, 'address', 'transactionHash', 'logIndex');
 
   // we create this here to correlate logs from sending the webhook with the receipt we store in dynamo
   try {
@@ -65,7 +66,7 @@ async function notifyEndpoint(subscription: Subscription, log: Log): Promise<Web
 
 async function sendLogNotification(crud: SubscriptionCrud, subscriptionArn: string, log: Log) {
   const subscription = await crud.getByArn(subscriptionArn);
-  const receipt = await notifyEndpoint(subscription, log);
+  const receipt = await notifyEndpoint(crud, subscription, log);
   await crud.saveReceipt(subscription, receipt);
 }
 
@@ -92,8 +93,6 @@ export const handle: Handler = async (event: SNSEvent, context: Context) => {
     context.succeed('sns event failed joi validation');
     return;
   }
-
-  const crud = new SubscriptionCrud({ client });
 
   for (let i = 0; i < value.Records.length; ++i) {
     const { EventSubscriptionArn, Sns: { Message } } = value.Records[i];

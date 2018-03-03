@@ -4,11 +4,9 @@ import QueueDrainer, { Message } from '../util/queue-drainer';
 import { JoiLog } from '@ethercast/model';
 import logger from '../util/logger';
 import { LOG_QUEUE_NAME, NOTIFICATION_TOPIC_NAME } from '../util/env';
-import * as SQS from 'aws-sdk/clients/sqs';
 import LogMessageProducer from '../util/log-message-producer';
 import SnsSubscriptionUtil from '../util/sns-subscription-util';
-import * as SNS from 'aws-sdk/clients/sns';
-import * as Lambda from 'aws-sdk/clients/lambda';
+import { SQS, Lambda, SNS } from 'aws-sdk';
 
 const sqs = new SQS();
 const sns = new SNS();

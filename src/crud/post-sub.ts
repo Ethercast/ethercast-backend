@@ -5,11 +5,9 @@ import getFilterCombinations from '../util/get-filter-combinations';
 import logger from '../util/logger';
 import SnsSubscriptionUtil from '../util/sns-subscription-util';
 import { NOTIFICATION_LAMBDA_NAME, NOTIFICATION_TOPIC_NAME } from '../util/env';
-import * as Lambda from 'aws-sdk/clients/lambda';
-import * as SNS from 'aws-sdk/clients/sns';
-import * as DynamoDB from 'aws-sdk/clients/dynamodb';
+import { Lambda, SNS, DynamoDB } from 'aws-sdk';
 import SubscriptionCrud from '../util/subscription-crud';
-import uuid = require('uuid');
+import * as uuid from 'uuid';
 
 const TOO_MANY_COMBINATIONS = simpleError(
   400,
@@ -21,7 +19,7 @@ const FIREHOSE_NOT_ALLOWED = simpleError(
   'Firehose log filters are not yet supported. Sorry, you must select at least one filter.'
 );
 
-const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient() });
+const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger });
 
 export const handle = createApiGatewayHandler(
   async ({ user, parsedBody }) => {

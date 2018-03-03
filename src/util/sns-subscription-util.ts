@@ -1,6 +1,5 @@
 import * as _ from 'underscore';
-import * as SNS from 'aws-sdk/clients/sns';
-import * as Lambda from 'aws-sdk/clients/lambda';
+import { Lambda, SNS } from 'aws-sdk';
 import { SubscriptionFilters } from './models';
 import toFilterPolicy from './to-filter-policy';
 import logger from './logger';

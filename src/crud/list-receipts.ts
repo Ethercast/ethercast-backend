@@ -1,10 +1,11 @@
 import 'source-map-support/register';
 import createApiGatewayHandler, { BAD_REQUEST } from '../util/create-api-gateway-handler';
 import { SUBSCRIPTION_NOT_FOUND } from './get-sub';
-import * as DynamoDB from 'aws-sdk/clients/dynamodb';
+import { DynamoDB } from 'aws-sdk';
 import SubscriptionCrud from '../util/subscription-crud';
+import logger from '../util/logger';
 
-const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient() });
+const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger });
 
 export const handle = createApiGatewayHandler(
   async ({ pathParameters: { id }, user }) => {
