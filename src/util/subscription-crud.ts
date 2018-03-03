@@ -128,17 +128,18 @@ export default class SubscriptionCrud {
     }
   }
 
-
   async deactivate(id: string): Promise<Subscription> {
     logger.info({ id }, 'DEACTIVATING subscription');
 
-    const sub = await this.get(id);
-
-    await this.client.put({
+    await this.client.update({
       TableName: SUBSCRIPTIONS_TABLE,
-      Item: {
-        ...sub,
-        status: SubscriptionStatus.deactivated
+      Key: { id },
+      UpdateExpression: 'set #status = :status',
+      ExpressionAttributeNames: {
+        '#status': 'status'
+      },
+      ExpressionAttributeValues: {
+        ':status': SubscriptionStatus.deactivated
       }
     }).promise();
 

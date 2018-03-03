@@ -1,14 +1,16 @@
 import 'source-map-support/register';
 import { Context, Handler, SNSEvent } from 'aws-lambda';
-import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import fetch from 'node-fetch';
 import { JoiLog, Log } from '@ethercast/model';
 import { Subscription, WebhookReceiptResult } from '../util/models';
 import logger from '../util/logger';
 import * as Joi from 'joi';
 import SubscriptionCrud from '../util/subscription-crud';
+import { DynamoDB, SNS } from 'aws-sdk';
 
-const client = new DocumentClient();
+const client = new DynamoDB.DocumentClient();
+const sns = new SNS();
+const crud = new SubscriptionCrud({ client });
 
 async function notifyEndpoint(subscription: Subscription, log: Log): Promise<WebhookReceiptResult> {
   const meta = { txHash: log.transactionHash, logIndex: log.logIndex };
@@ -39,6 +41,19 @@ async function notifyEndpoint(subscription: Subscription, log: Log): Promise<Web
     }, `delivered event`);
 
     const success = status >= 200 && status < 300;
+
+    // we need to deactivate the webhook if we see a 410
+    if (status === 410) {
+      logger.info({ subscription }, 'respecting 410 response with deactivation');
+
+      try {
+        await sns.unsubscribe({ SubscriptionArn: subscription.subscriptionArn }).promise();
+        await crud.deactivate(subscription.id);
+        logger.info({ subscription }, 'unsubscribed subscription due to 410 response');
+      } catch (err) {
+        logger.error({ err }, 'failed to unsubscribe in response to a 410');
+      }
+    }
 
     return { success, statusCode: status };
   } catch (err) {
