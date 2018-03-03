@@ -3,6 +3,7 @@ import * as SNS from 'aws-sdk/clients/sns';
 import * as Lambda from 'aws-sdk/clients/lambda';
 import { SubscriptionFilters } from './models';
 import toFilterPolicy from './to-filter-policy';
+import logger from './logger';
 
 export default class SnsSubscriptionUtil {
   private sns: SNS;
@@ -45,6 +46,8 @@ export default class SnsSubscriptionUtil {
   async createSNSSubscription(notificationLambdaName: string, topicName: string, subscriptionId: string, filters: SubscriptionFilters): Promise<string> {
     const TopicArn = await this.getTopicArn(topicName);
     const Endpoint = await this.createLambdaAlias(notificationLambdaName, subscriptionId);
+
+    logger.info({ Endpoint }, 'subscribing endpoint arn');
 
     const { SubscriptionArn } = await this.sns.subscribe({
       Protocol: 'lambda',
