@@ -44,7 +44,7 @@ export default class QueueDrainer {
     return response.Messages;
   }
 
-  deleteMessages = async (messages: Message[]) => {
+  private deleteMessages = async (messages: Message[]) => {
     if (messages.length === 0) {
       return;
     }
@@ -74,7 +74,7 @@ export default class QueueDrainer {
     logger.debug({ messageCount: messages.length }, 'deleted messages');
   };
 
-  processMessages = async (messages: Message[]) => {
+  private processMessages = async (messages: Message[]) => {
     logger.debug({ messageCount: messages.length }, `processing messages`);
 
     for (let i = 0; i < messages.length; i++) {
@@ -97,6 +97,11 @@ export default class QueueDrainer {
       const messages = await this.poll();
 
       await this.processMessages(messages);
+
+      if (messages.length === 0) {
+        logger.info({ processedMessageCount, pollCount }, 'queue is empty, ending drain');
+        break;
+      }
 
       await this.deleteMessages(messages);
 
