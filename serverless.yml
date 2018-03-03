@@ -88,7 +88,7 @@ provider:
       Action:
         - lambda:CreateAlias
       Resource:
-        - "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
+        - "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:custom.sendWebhookLambdaName}"
     - Effect: Allow
       Action:
         - sqs:GetQueueUrl
