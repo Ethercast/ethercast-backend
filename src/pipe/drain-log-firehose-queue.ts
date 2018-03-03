@@ -53,7 +53,13 @@ export const handle: Handler = async (event, context: Context, cb?: Callback) =>
 
     logger.info({ QueueUrl }, 'dequeueing from queue');
 
-    const consumer = new QueueDrainer(sqs, QueueUrl, handleQueueMessage, context.getRemainingTimeInMillis);
+    const consumer = new QueueDrainer({
+      sqs,
+      queueUrl: QueueUrl,
+      handleMessage: handleQueueMessage,
+      getRemainingTime: () => context.getRemainingTimeInMillis()
+    });
+
     const count = await consumer.start();
 
     logger.info({ count }, 'removed count');

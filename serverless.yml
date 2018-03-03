@@ -94,6 +94,7 @@ provider:
         - sqs:GetQueueUrl
         - sqs:ReceiveMessage
         - sqs:DeleteMessage
+        - sqs:DeleteMessageBatch
       Resource:
         - "arn:aws:sqs:#{AWS::Region}:#{AWS::AccountId}:${self:custom.logQueueName}"
 
