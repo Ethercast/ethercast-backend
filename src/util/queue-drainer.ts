@@ -61,8 +61,8 @@ export default class QueueDrainer {
     let processedMessageCount = 0;
     let pollCount = 0;
 
-    // while we have more than 2 polling intervals left
-    while (this.getRemainingTime() > 2 * POLL_SECONDS * 1000) {
+    // while we have more than 3 seconds remaining
+    while (this.getRemainingTime() > 3000) {
       const messages = await this.poll();
 
       logger.debug({ pollCount, processedMessageCount, messageCount: messages.length }, `polled queue`);
