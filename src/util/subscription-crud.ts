@@ -73,9 +73,12 @@ export default class SubscriptionCrud {
         }
       }).promise();
 
-      if (!Items || Items.length !== 1) {
-        logger.error({ Items }, 'too many matching arns');
-        throw new Error('more results than expected');
+      if (!Items || Items.length === 0) {
+        logger.error({ Items, subscriptionArn }, 'no matching arns');
+        throw new Error('no matching arns');
+      } else if (Items.length > 1) {
+        logger.error({ Items, subscriptionArn }, 'too many matching arns');
+        throw new Error('too many matching arns');
       }
 
       return Items[0] as Subscription;
