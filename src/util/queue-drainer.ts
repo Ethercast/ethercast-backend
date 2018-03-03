@@ -1,8 +1,6 @@
 import logger from './logger';
 import * as SQS from 'aws-sdk/clients/sqs';
 
-const POLL_SECONDS = 0.5;
-
 export type Message = SQS.Types.Message;
 export type MessageHandler = (message: Message) => Promise<void>;
 export type TimerFn = () => number;
@@ -22,15 +20,14 @@ export default class QueueDrainer {
     logger.info({ queueUrl }, `initializing polling queue`);
   }
 
-  private async poll(numMessages: number = 10) {
+  private async poll(numMessages: number = 10): Promise<Message[]> {
     const response = await this.sqs.receiveMessage({
       QueueUrl: this.queueUrl,
       MaxNumberOfMessages: numMessages,
-      WaitTimeSeconds: POLL_SECONDS
+      WaitTimeSeconds: 1
     }).promise();
     return response.Messages || [];
   }
-
 
   private async deleteMessage(message: Message) {
     if (!message.ReceiptHandle) {
