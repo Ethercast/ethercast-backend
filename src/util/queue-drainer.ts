@@ -44,6 +44,10 @@ export default class QueueDrainer {
   }
 
   deleteMessages = async (messages: Message[]) => {
+    if (messages.length === 0) {
+      return;
+    }
+
     logger.debug({ messageCount: messages.length }, 'deleting messages');
 
     const Entries = messages
