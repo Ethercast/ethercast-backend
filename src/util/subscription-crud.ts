@@ -83,7 +83,7 @@ export default class SubscriptionCrud {
 
       return Items[0] as Subscription;
     } catch (err) {
-      logger.error({ err }, 'failed to get subscription by arn');
+      logger.error({ err, subscriptionArn }, 'failed to get subscription by arn');
       throw err;
     }
   }

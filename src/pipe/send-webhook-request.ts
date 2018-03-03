@@ -1,8 +1,8 @@
 import 'source-map-support/register';
-import { Callback, Context, Handler, SNSEvent } from 'aws-lambda';
+import { Context, Handler, SNSEvent } from 'aws-lambda';
 import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import fetch from 'node-fetch';
-import { Log } from '@ethercast/model';
+import { JoiLog, Log } from '@ethercast/model';
 import { Subscription, WebhookReceiptResult } from '../util/models';
 import logger from '../util/logger';
 import * as Joi from 'joi';
@@ -42,7 +42,7 @@ async function notifyEndpoint(subscription: Subscription, log: Log): Promise<Web
 
     return { success, statusCode: status };
   } catch (err) {
-    logger.error({ err, log, subscription, meta }, `failed to send log to subscription`);
+    logger.warn({ err, log, subscription, meta }, `failed to send log to subscription`);
 
     return { success: false, statusCode: 0 };
   }
@@ -65,17 +65,13 @@ const JoiSnsNotification = Joi.object({
   ).required()
 });
 
-export const handle: Handler = async (event: SNSEvent, context: Context, callback?: Callback) => {
-  if (!callback) {
-    throw new Error('invalid call to handler, missing callback');
-  }
-
+export const handle: Handler = async (event: SNSEvent, context: Context) => {
   // Make sure it's an SNS message
   const { value, error } = JoiSnsNotification.validate(event, { allowUnknown: true });
 
   if (error) {
     logger.error({ error }, 'sns event failed joi validation');
-    callback(new Error('sns event failed joi validation'));
+    context.done(new Error('sns event failed joi validation'));
     return;
   }
 
@@ -84,12 +80,18 @@ export const handle: Handler = async (event: SNSEvent, context: Context, callbac
   for (let i = 0; i < value.Records.length; ++i) {
     const { EventSubscriptionArn, Sns: { Message } } = value.Records[i];
 
-    try {
-      const log = JSON.parse(Message);
-      await sendLogNotification(crud, EventSubscriptionArn, log);
-    } catch (err) {
-      logger.error({ err, record: value.Records[i] }, 'failed to send log notification');
-      throw err;
+    const { value: log, error } = JoiLog.validate(JSON.parse(Message), { allowUnknown: true });
+
+    if (error) {
+      logger.error({ error }, 'log failed validation');
+      context.done(new Error('log failed validation'));
+    } else {
+      try {
+        await sendLogNotification(crud, EventSubscriptionArn, log);
+      } catch (err) {
+        logger.error({ err, record: value.Records[i] }, 'failed to send log notification');
+        context.done(new Error('failed to send'));
+      }
     }
   }
 };
