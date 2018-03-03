@@ -21,7 +21,7 @@ export default class SubscriptionCrud {
 
   constructor({ client, logger }: { client: DynamoDB.DocumentClient, logger: Logger }) {
     this.client = client;
-    this.logger = logger.child({ clazz: 'SubscriptionCrud' });
+    this.logger = logger;
   }
 
   async save(subscription: Subscription, user: string): Promise<Subscription> {

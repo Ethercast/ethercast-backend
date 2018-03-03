@@ -1,12 +1,12 @@
 import 'source-map-support/register';
 import { Callback, Context, Handler } from 'aws-lambda';
-import QueueDrainer, { Message } from '../util/queue-drainer';
 import { JoiLog } from '@ethercast/model';
 import logger from '../util/logger';
 import { LOG_QUEUE_NAME, NOTIFICATION_TOPIC_NAME } from '../util/env';
 import LogMessageProducer from '../util/log-message-producer';
 import SnsSubscriptionUtil from '../util/sns-subscription-util';
 import { SQS, Lambda, SNS } from 'aws-sdk';
+import QueueDrainer from '@ethercast/queue-drainer';
 
 const sqs = new SQS();
 const sns = new SNS();
@@ -27,7 +27,7 @@ export const handle: Handler = async (event, context: Context, cb?: Callback) =>
     cb(null, err);
   }
 
-  const handleQueueMessage = async (message: Message) => {
+  const handleQueueMessage = async (message: SQS.Types.Message) => {
     if (!message.Body) {
       throw new Error(`missing message body`);
     }
