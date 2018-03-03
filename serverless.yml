@@ -103,7 +103,7 @@ provider:
 functions:
   # backend
   drain-log-firehose-queue:
-    memorySize: 192
+    memorySize: 512
     handler: src/pipe/drain-log-firehose-queue.handle
     reservedConcurrency: 1
     timeout: 60
@@ -113,7 +113,7 @@ functions:
   send-webhook-request:
     handler: src/pipe/send-webhook-request.handle
     name: ${self:custom.sendWebhookLambdaName}
-    timeout: 3
+    timeout: 5
 
   # CRUD
 
