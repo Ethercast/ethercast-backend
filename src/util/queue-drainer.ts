@@ -69,6 +69,10 @@ export default class QueueDrainer {
       processedMessageCount += messages.length;
 
       pollCount++;
+
+      if (pollCount % 5 === 0) {
+        logger.info({ pollCount, processedMessageCount }, 'polling...');
+      }
     }
 
     logger.debug({ processedMessageCount, pollCount }, 'finished draining queue');
