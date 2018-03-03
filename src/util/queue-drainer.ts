@@ -22,7 +22,8 @@ export default class QueueDrainer {
   private async poll(numMessages: number = 10): Promise<Message[]> {
     const response = await this.sqs.receiveMessage({
       QueueUrl: this.queueUrl,
-      MaxNumberOfMessages: numMessages
+      MaxNumberOfMessages: numMessages,
+      WaitTimeSeconds: 1
     }).promise();
 
     if (!response.Messages) {
