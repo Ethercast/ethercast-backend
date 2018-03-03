@@ -99,7 +99,7 @@ export default class SubscriptionCrud {
     try {
       logger.debug({ subscription, result }, 'saving receipt');
 
-      const timestamp = (new Date()).getTime() / 1000;
+      const timestamp = Math.round((new Date()).getTime() / 1000);
 
       const webhookReceipt = {
         id: uuid.v4(),
