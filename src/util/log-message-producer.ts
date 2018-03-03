@@ -15,14 +15,14 @@ export default class LogMessageProducer {
   }
 
   public async publish(log: Log) {
-    const attributes = toMessageAttributes(log);
+    const MessageAttributes = toMessageAttributes(log);
 
     const { MessageId } = await this.sns.publish({
       Message: JSON.stringify(log),
-      MessageAttributes: attributes,
+      MessageAttributes,
       TopicArn: this.topicArn
     }).promise();
 
-    logger.debug({ MessageId, topicArn: this.topicArn, attributes }, `published message`);
+    logger.debug({ MessageId, MessageAttributes, topicArn: this.topicArn }, `published message`);
   }
 }
