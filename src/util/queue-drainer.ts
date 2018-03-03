@@ -1,6 +1,6 @@
 import logger from './logger';
 import * as SQS from 'aws-sdk/clients/sqs';
-import { DeleteMessageBatchRequest, DeleteMessageBatchRequestEntryList } from 'aws-sdk/clients/sqs';
+import _ = require('underscore');
 
 export type Message = SQS.Types.Message;
 export type MessageHandler = (message: Message) => Promise<void>;
@@ -25,33 +25,41 @@ export default class QueueDrainer {
       MaxNumberOfMessages: numMessages
     }).promise();
 
-    return response.Messages || [];
-  }
-
-  private async deleteMessage(message: Message) {
-    if (!message.ReceiptHandle) {
-      throw new Error('missing receipt handle');
+    if (!response.Messages) {
+      logger.info('polling returned no messages');
+      return [];
     }
 
-    try {
-      await this.sqs.deleteMessage({
-        QueueUrl: this.queueUrl,
-        ReceiptHandle: message.ReceiptHandle
-      }).promise();
-    } catch (err) {
-      logger.error({ err, message }, 'failed to delete message');
+    if (
+      _.any(
+        response.Messages,
+        ({ MessageId, ReceiptHandle }) => typeof MessageId !== 'string' || typeof ReceiptHandle !== 'string'
+      )
+    ) {
+      logger.warn({ response }, 'missing message ids or receipt handles');
+      return [];
     }
+
+    return response.Messages;
   }
 
   deleteMessages = async (messages: Message[]) => {
     logger.debug({ messageCount: messages.length }, 'deleting messages');
 
-    const Entries: DeleteMessageBatchRequestEntryList = messages.map(
-      ({ MessageId, ReceiptHandle }) => ({
-        Id: MessageId,
-        ReceiptHandle
-      })
-    ) as any;
+    const Entries = messages
+      .map(
+        ({ MessageId, ReceiptHandle }) => {
+          if (!MessageId || !ReceiptHandle) {
+            logger.error({ MessageId, ReceiptHandle }, 'missing message id or receipt handle');
+            throw new Error('missing message id or receipt handle');
+          }
+
+          return {
+            Id: MessageId,
+            ReceiptHandle
+          };
+        }
+      );
 
     await this.sqs.deleteMessageBatch({
       QueueUrl: this.queueUrl,
@@ -65,8 +73,7 @@ export default class QueueDrainer {
     logger.debug({ messageCount: messages.length }, `processing messages`);
 
     for (let i = 0; i < messages.length; i++) {
-      const message: Message = messages[i];
-      await this.handleMessage(message);
+      await this.handleMessage(messages[i]);
     }
   };
 
@@ -89,7 +96,6 @@ export default class QueueDrainer {
       await this.deleteMessages(messages);
 
       processedMessageCount += messages.length;
-
       pollCount++;
     }
 

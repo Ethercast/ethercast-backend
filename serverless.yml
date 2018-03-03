@@ -101,6 +101,7 @@ provider:
 functions:
   # backend
   drain-log-firehose-queue:
+    memorySize: 192
     handler: src/pipe/drain-log-firehose-queue.handle
     reservedConcurrency: 1
     timeout: 60
