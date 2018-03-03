@@ -61,6 +61,7 @@ export const handle = createApiGatewayHandler(
         subscription.id,
         subscription.filters
       );
+
     } catch (err) {
       logger.error({ err }, 'failed sns/lambda calls');
 

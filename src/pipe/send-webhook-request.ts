@@ -65,13 +65,16 @@ const JoiSnsNotification = Joi.object({
   ).required()
 });
 
+/**
+ * This function always succeeds so as to prevent SNS from retrying a whole bunch
+ */
 export const handle: Handler = async (event: SNSEvent, context: Context) => {
   // Make sure it's an SNS message
   const { value, error } = JoiSnsNotification.validate(event, { allowUnknown: true });
 
   if (error) {
     logger.error({ error }, 'sns event failed joi validation');
-    context.done(new Error('sns event failed joi validation'));
+    context.succeed('sns event failed joi validation');
     return;
   }
 
@@ -84,13 +87,14 @@ export const handle: Handler = async (event: SNSEvent, context: Context) => {
 
     if (error) {
       logger.error({ error }, 'log failed validation');
-      context.done(new Error('log failed validation'));
+      context.succeed('log failed validation');
     } else {
       try {
         await sendLogNotification(crud, EventSubscriptionArn, log);
+        context.succeed('log notification sent');
       } catch (err) {
         logger.error({ err, record: value.Records[i] }, 'failed to send log notification');
-        context.done(new Error('failed to send'));
+        context.succeed('failed to send');
       }
     }
   }

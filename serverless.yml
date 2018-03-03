@@ -48,6 +48,7 @@ provider:
   name: aws
   runtime: nodejs6.10
   memorySize: 128
+  logRetentionInDays: 7
   environment:
     LOG_LEVEL: ${self:custom.logLevel}
     SUBSCRIPTIONS_TABLE: ${self:custom.subscriptionsTable}
@@ -87,6 +88,7 @@ provider:
     - Effect: Allow
       Action:
         - lambda:CreateAlias
+        - lambda:AddPermission
       Resource:
         - "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:custom.sendWebhookLambdaName}"
     - Effect: Allow
@@ -111,9 +113,7 @@ functions:
   send-webhook-request:
     handler: src/pipe/send-webhook-request.handle
     name: ${self:custom.sendWebhookLambdaName}
-    timeout: 30
-    events:
-      - sns: "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
+    timeout: 3
 
   # CRUD
 

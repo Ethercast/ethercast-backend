@@ -4,6 +4,7 @@ import * as Lambda from 'aws-sdk/clients/lambda';
 import { SubscriptionFilters } from './models';
 import toFilterPolicy from './to-filter-policy';
 import logger from './logger';
+import { NOTIFICATION_LAMBDA_NAME } from './env';
 
 export default class SnsSubscriptionUtil {
   private sns: SNS;
@@ -29,23 +30,38 @@ export default class SnsSubscriptionUtil {
       }
     ) as any;
 
-  createLambdaAlias = async (notificationLambdaName: string, subscriptionId: string) => {
+  createLambdaAlias = async (topicArn: string, notificationLambdaName: string, subscriptionId: string) => {
+    const aliasName = `subscription-${subscriptionId}`;
     const { AliasArn } = await this.lambda.createAlias({
       FunctionName: notificationLambdaName,
       FunctionVersion: '$LATEST',
-      Name: `subscription-${subscriptionId}`
+      Name: aliasName
     }).promise();
 
     if (!AliasArn) {
       throw new Error(`Failed to create function alias: ${subscriptionId}`);
     }
 
+    logger.info({ aliasName, AliasArn }, 'created alias for lambda');
+
+    // We have to do this to allow our topic to call the alias we just created
+    const { Statement } = await this.lambda.addPermission({
+      StatementId: subscriptionId,
+      FunctionName: NOTIFICATION_LAMBDA_NAME,
+      Qualifier: aliasName,
+      Action: 'lambda:InvokeFunction',
+      Principal: 'sns.amazonaws.com',
+      SourceArn: topicArn
+    }).promise();
+
+    logger.info({ Statement, topicArn, AliasArn, aliasName }, `added permission to lambda`);
+
     return AliasArn;
   };
 
   async createSNSSubscription(notificationLambdaName: string, topicName: string, subscriptionId: string, filters: SubscriptionFilters): Promise<string> {
     const TopicArn = await this.getTopicArn(topicName);
-    const Endpoint = await this.createLambdaAlias(notificationLambdaName, subscriptionId);
+    const Endpoint = await this.createLambdaAlias(TopicArn, notificationLambdaName, subscriptionId);
 
     logger.info({ Endpoint }, 'subscribing endpoint arn');
 
