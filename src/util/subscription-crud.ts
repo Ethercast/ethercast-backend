@@ -2,11 +2,14 @@ import { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from './env';
 import logger from './logger';
 import {
-  JoiSubscription, JoiWebhookReceiptResult, Subscription, SubscriptionStatus, WebhookReceipt,
+  JoiSubscription,
+  JoiWebhookReceiptResult,
+  Subscription,
+  SubscriptionStatus,
+  WebhookReceipt,
   WebhookReceiptResult
 } from './models';
 import uuid = require('uuid');
-import * as _ from 'underscore';
 
 const SUBSCRIPTIONS_USER_INDEX = 'ByUser';
 const SUBSCRIPTIONS_ARN_INDEX = 'BySubscriptionArn';
