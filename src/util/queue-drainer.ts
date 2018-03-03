@@ -1,7 +1,7 @@
 import logger from './logger';
 import * as SQS from 'aws-sdk/clients/sqs';
 
-const POLL_SECONDS = 3;
+const POLL_SECONDS = 1;
 
 export type Message = SQS.Types.Message;
 export type MessageHandler = (message: Message) => Promise<void>;
