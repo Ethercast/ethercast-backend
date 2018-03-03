@@ -69,10 +69,10 @@ provider:
         - dynamodb:BatchWriteItem
       Resource:
         - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}"
-        - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}/ByUser"
-        - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}/BySubscriptionArn"
+        - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}/index/ByUser"
+        - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}/index/BySubscriptionArn"
         - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}"
-        - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}/BySubscriptionId"
+        - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}/index/BySubscriptionId"
     - Effect: Allow
       Action:
         - sns:Subscribe
