@@ -239,11 +239,11 @@ functions:
 resources:
   Description: CRUD API for subscriptions as well as ingest and egest notifications for log firehose
   Resources:
-    Topic:
+    LogNotificationTopic:
       Type: AWS::SNS::Topic
       Properties:
         TopicName: ${self:custom.logNotificationTopicName}
-    Topic:
+    TransactionNotificationTopic:
       Type: AWS::SNS::Topic
       Properties:
         TopicName: ${self:custom.txNotificationTopicName}
