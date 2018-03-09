@@ -10,7 +10,6 @@
     "test": "ts-mocha tests/**/*.test.ts"
   },
   "devDependencies": {
-    "@ethercast/queue-drainer": "0.0.4",
     "@types/aws-lambda": "0.0.22",
     "@types/bunyan": "^1.8.4",
     "@types/chai": "^4.1.2",
@@ -37,6 +36,7 @@
   },
   "dependencies": {
     "@ethercast/model": "0.0.13",
+    "@ethercast/queue-drainer": "0.0.4",
     "bignumber.js": "^6.0.0",
     "bunyan": "^1.8.12",
     "env-var": "^3.2.0",

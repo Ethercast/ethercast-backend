@@ -1,5 +1,5 @@
 import 'source-map-support/register';
-import { Context, Handler } from 'aws-lambda';
+import { Handler } from 'aws-lambda';
 import { mustBeValidTransaction, Transaction } from '@ethercast/model';
 import logger from '../util/logger';
 import { TX_NOTIFICATION_TOPIC_NAME, TX_QUEUE_NAME } from '../util/env';
@@ -16,7 +16,7 @@ const lambda = new Lambda();
 
 const subscriptionUtil = new SnsSubscriptionUtil({ logger, lambda, sns });
 
-export const handle: Handler = async (event, context, cb) => {
+export const handle: Handler = async (event, context) => {
   let producer: MessageProducer;
   try {
     const notificationTopicArn = await subscriptionUtil.getTopicArn(TX_NOTIFICATION_TOPIC_NAME);
