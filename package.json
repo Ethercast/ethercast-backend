@@ -50,7 +50,5 @@
     "underscore": "^1.8.3",
     "url-regex": "^4.1.1",
     "uuid": "^3.2.1"
-  },
-  "author": "The serverless webpack authors (https://github.com/elastic-coders/serverless-webpack)",
-  "license": "MIT"
+  }
 }
