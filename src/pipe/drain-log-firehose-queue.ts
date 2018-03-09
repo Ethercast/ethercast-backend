@@ -15,7 +15,7 @@ const sns = new SNS();
 const lambda = new Lambda();
 const subscriptionUtil = new SnsSubscriptionUtil({ logger, lambda, sns });
 
-export const handle: Handler = async (event, context) => {
+export const handle: Handler = async (event, context, cb) => {
   let producer: MessageProducer;
   try {
     const notificationTopicArn = await subscriptionUtil.getTopicArn(LOG_NOTIFICATION_TOPIC_NAME);
