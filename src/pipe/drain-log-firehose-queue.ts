@@ -1,9 +1,9 @@
 import 'source-map-support/register';
-import { Context, Handler } from 'aws-lambda';
+import { Handler } from 'aws-lambda';
 import { Log, mustBeValidLog } from '@ethercast/model';
 import logger from '../util/logger';
-import { LOG_QUEUE_NAME, NOTIFICATION_TOPIC_NAME } from '../util/env';
-import LogMessageProducer from '../util/message-producer';
+import { LOG_NOTIFICATION_TOPIC_NAME, LOG_QUEUE_NAME } from '../util/env';
+import MessageProducer from '../util/message-producer';
 import SnsSubscriptionUtil from '../util/sns-subscription-util';
 import QueueDrainer from '@ethercast/queue-drainer';
 import * as SQS from 'aws-sdk/clients/sqs';
@@ -13,14 +13,13 @@ import * as Lambda from 'aws-sdk/clients/lambda';
 const sqs = new SQS();
 const sns = new SNS();
 const lambda = new Lambda();
+const subscriptionUtil = new SnsSubscriptionUtil({ logger, lambda, sns });
 
-export const handle: Handler = async (event, context: Context) => {
-  const subscriptionUtil = new SnsSubscriptionUtil({ lambda, sns });
-
-  let producer: LogMessageProducer;
+export const handle: Handler = async (event, context) => {
+  let producer: MessageProducer;
   try {
-    const notificationTopicArn = await subscriptionUtil.getTopicArn(NOTIFICATION_TOPIC_NAME);
-    producer = new LogMessageProducer(sns, notificationTopicArn);
+    const notificationTopicArn = await subscriptionUtil.getTopicArn(LOG_NOTIFICATION_TOPIC_NAME);
+    producer = new MessageProducer(sns, notificationTopicArn);
   } catch (err) {
     logger.error({ err }, 'failed to get notification topic arn');
     context.fail(err);

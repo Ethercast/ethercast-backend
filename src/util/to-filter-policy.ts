@@ -1,7 +1,11 @@
-import { FilterOptionValue, LogFilterType, LogSubscriptionFilters } from './models';
+import { FilterOptionValue, LogSubscriptionFilters, TransactionSubscriptionFilters } from './models';
 import _ = require('underscore');
 
-export default function toFilterPolicy(filter: LogSubscriptionFilters): Partial<{[filterType in LogFilterType]: string[]}> {
+type FilterPolicy = {
+  [key: string]: string[];
+};
+
+export default function toFilterPolicy(filter: LogSubscriptionFilters | TransactionSubscriptionFilters): FilterPolicy {
   return _.mapObject(
     _.omit(filter, (value: FilterOptionValue) => value === null),
     value => {

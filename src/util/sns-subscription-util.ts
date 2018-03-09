@@ -1,18 +1,20 @@
 import * as _ from 'underscore';
-import { LogSubscriptionFilters } from './models';
+import { LogSubscriptionFilters, TransactionSubscriptionFilters } from './models';
 import toFilterPolicy from './to-filter-policy';
-import logger from './logger';
-import { NOTIFICATION_LAMBDA_NAME } from './env';
+import { SEND_WEBHOOK_LAMBDA_NAME } from './env';
 import * as SNS from 'aws-sdk/clients/sns';
 import * as Lambda from 'aws-sdk/clients/lambda';
+import * as Logger from 'bunyan';
 
 export default class SnsSubscriptionUtil {
   private sns: SNS;
   private lambda: Lambda;
+  private logger: Logger;
 
-  constructor({ sns, lambda }: { sns: SNS; lambda: Lambda; }) {
+  constructor({ sns, lambda, logger }: { sns: SNS; lambda: Lambda; logger: Logger; }) {
     this.sns = sns;
     this.lambda = lambda;
+    this.logger = logger;
   }
 
   getTopicArn: (topicName: string) => Promise<string> =
@@ -42,28 +44,28 @@ export default class SnsSubscriptionUtil {
       throw new Error(`Failed to create function alias: ${subscriptionId}`);
     }
 
-    logger.info({ aliasName, AliasArn }, 'created alias for lambda');
+    this.logger.info({ aliasName, AliasArn }, 'created alias for lambda');
 
     // We have to do this to allow our topic to call the alias we just created
     const { Statement } = await this.lambda.addPermission({
       StatementId: subscriptionId,
-      FunctionName: NOTIFICATION_LAMBDA_NAME,
+      FunctionName: SEND_WEBHOOK_LAMBDA_NAME,
       Qualifier: aliasName,
       Action: 'lambda:InvokeFunction',
       Principal: 'sns.amazonaws.com',
       SourceArn: topicArn
     }).promise();
 
-    logger.info({ Statement, topicArn, AliasArn, aliasName }, `added permission to lambda`);
+    this.logger.info({ Statement, topicArn, AliasArn, aliasName }, `added permission to lambda`);
 
     return AliasArn;
   };
 
-  async createSNSSubscription(notificationLambdaName: string, topicName: string, subscriptionId: string, filters: LogSubscriptionFilters): Promise<string> {
+  async createSNSSubscription(notificationLambdaName: string, topicName: string, subscriptionId: string, filters: LogSubscriptionFilters | TransactionSubscriptionFilters): Promise<string> {
     const TopicArn = await this.getTopicArn(topicName);
     const Endpoint = await this.createLambdaAlias(TopicArn, notificationLambdaName, subscriptionId);
 
-    logger.info({ Endpoint }, 'subscribing endpoint arn');
+    this.logger.info({ Endpoint }, 'subscribing endpoint arn');
 
     const { SubscriptionArn } = await this.sns.subscribe({
       Protocol: 'lambda',

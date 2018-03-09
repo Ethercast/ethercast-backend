@@ -1,13 +1,21 @@
 import toLogMessageAttributes from '../src/util/to-log-message-attributes';
-import { LogFilterType } from '../src/util/models';
-import { Log } from '@ethercast/model';
+import { LogFilterType, TransactionFilterType } from '../src/util/models';
+import { Log, Transaction } from '@ethercast/model';
 import { expect } from 'chai';
+import toTxMessageAttributes from '../src/util/to-tx-message-attributes';
 
 function fakeLog(address: string, ...topics: string[]): Log {
   return {
     address,
     topics
   } as Log;
+}
+
+function fakeTx(from: string, to: string | null): Transaction {
+  return {
+    from,
+    to
+  } as Transaction;
 }
 
 describe('#toLogMessageAttributes', () => {
@@ -79,4 +87,25 @@ describe('#toLogMessageAttributes', () => {
     });
   });
 
+});
+
+describe('#toTxMessageAttributes', () => {
+
+  it('produces expected result on example tx', () => {
+    expect(
+      toTxMessageAttributes(fakeTx(
+        '0xd2d6158683aee4cc838067727209a0aaf4359de3',
+        '0xd2d6158683aee4cc838067727209a0aaf4359de3'
+      ))
+    ).to.deep.eq({
+      [TransactionFilterType.from]: {
+        DataType: 'String',
+        StringValue: '0xd2d6158683aee4cc838067727209a0aaf4359de3'
+      },
+      [TransactionFilterType.to]: {
+        DataType: 'String',
+        StringValue: '0xd2d6158683aee4cc838067727209a0aaf4359de3'
+      }
+    });
+  });
 });

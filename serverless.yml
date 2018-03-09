@@ -12,7 +12,8 @@ custom:
   prefix: ${self:service}-${self:custom.stage}
   subscriptionsTable: ${self:custom.prefix}-subscriptions
   receiptsTable: ${self:custom.prefix}-receipts
-  notificationTopicName: ${self:custom.prefix}-topic
+  logNotificationTopicName: ${self:custom.prefix}-logs-topic
+  txNotificationTopicName: ${self:custom.prefix}-txs-topic
   sendWebhookLambdaName: ${self:custom.prefix}-send-webhook-lambda
   logQueueName: "serverless-blockstream-${self:custom.stage}-log-firehose.fifo"
   txQueueName: "serverless-blockstream-${self:custom.stage}-tx-firehose.fifo"
@@ -55,8 +56,9 @@ provider:
     SUBSCRIPTIONS_TABLE: ${self:custom.subscriptionsTable}
     WEBHOOK_RECEIPTS_TABLE: ${self:custom.receiptsTable}
     TOKEN_ISSUER: ${self:custom.tokenIssuer}
-    NOTIFICATION_TOPIC_NAME: ${self:custom.notificationTopicName}
-    NOTIFICATION_LAMBDA_NAME: ${self:custom.sendWebhookLambdaName}
+    LOG_NOTIFICATION_TOPIC_NAME: ${self:custom.logNotificationTopicName}
+    TX_NOTIFICATION_TOPIC_NAME: ${self:custom.txNotificationTopicName}
+    SEND_WEBHOOK_LAMBDA_NAME: ${self:custom.sendWebhookLambdaName}
     LOG_QUEUE_NAME: ${self:custom.logQueueName}
     TX_QUEUE_NAME: ${self:custom.txQueueName}
   iamRoleStatements:
@@ -86,7 +88,8 @@ provider:
         - sns:CreateTopic
         - sns:Publish
       Resource:
-        - "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.notificationTopicName}"
+        - "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.logNotificationTopicName}"
+        - "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.txNotificationTopicName}"
     - Effect: Allow
       Action:
         - lambda:CreateAlias
@@ -239,7 +242,11 @@ resources:
     Topic:
       Type: AWS::SNS::Topic
       Properties:
-        TopicName: ${self:custom.notificationTopicName}
+        TopicName: ${self:custom.logNotificationTopicName}
+    Topic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:custom.txNotificationTopicName}
     SubscriptionsTable:
       Type: AWS::DynamoDB::Table
       Properties:

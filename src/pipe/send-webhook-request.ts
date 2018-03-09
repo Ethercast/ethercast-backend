@@ -21,7 +21,6 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
       subscription.webhookUrl,
       {
         method: 'POST',
-        // TODO: sign message
         headers: {
           'user-agent': 'ethercast',
           'x-ethercast-subscription-id': subscription.id,
@@ -45,7 +44,7 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
       try {
         await sns.unsubscribe({ SubscriptionArn: subscription.subscriptionArn }).promise();
         await crud.deactivate(subscription.id);
-        logger.info({ subscription }, 'unsubscribed subscription due to 410 response');
+        logger.info({ subscription }, 'unsubscribed due to 410 response');
       } catch (err) {
         logger.error({ err }, 'failed to unsubscribe in response to a 410');
       }
@@ -60,7 +59,7 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
 }
 
 async function sendLogNotification(crud: SubscriptionCrud, subscriptionArn: string, message: string) {
-  const subscription = await crud.getByArn(subscriptionArn);
+  const subscription: Subscription = await crud.getByArn(subscriptionArn);
   const receipt = await notifyEndpoint(crud, subscription, message);
   await crud.saveReceipt(subscription, receipt);
 }
@@ -92,17 +91,13 @@ export const handle: Handler = async (event: SNSEvent, context: Context) => {
   for (let i = 0; i < value.Records.length; i++) {
     const { EventSubscriptionArn, Sns: { Message } } = value.Records[i];
 
-    if (error) {
-      logger.error({ error }, 'log failed validation');
-      context.fail(new Error('log failed validation'));
-    } else {
-      try {
-        await sendLogNotification(crud, EventSubscriptionArn, Message);
-      } catch (err) {
-        logger.error({ err, record: value.Records[i] }, 'failed to send log notification');
-        context.fail(new Error('failed to send a notification'));
-        return;
-      }
+
+    try {
+      await sendLogNotification(crud, EventSubscriptionArn, Message);
+    } catch (err) {
+      logger.error({ err, record: value.Records[i] }, 'failed to send log notification');
+      context.fail(new Error('failed to send a notification'));
+      return;
     }
   }
 

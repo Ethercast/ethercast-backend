@@ -24,13 +24,12 @@ export default class SubscriptionCrud {
     this.logger = logger;
   }
 
-  async save(subscription: Subscription, user: string): Promise<Subscription> {
+  async save(subscription: Partial<Subscription>): Promise<Subscription> {
     this.logger.info({ subscription }, 'saving subscription to dynamo');
 
     const { error, value: toSave } = JoiSubscription.validate({
       id: uuid.v4(),
       ...subscription,
-      user,
       timestamp: (new Date()).getTime(),
       status: SubscriptionStatus.active
     });
@@ -106,7 +105,7 @@ export default class SubscriptionCrud {
 
       const timestamp = Math.round((new Date()).getTime() / 1000);
 
-      const webhookReceipt = {
+      const webhookReceipt: WebhookReceipt = {
         id: uuid.v4(),
         subscriptionId: subscription.id,
         url: subscription.webhookUrl,
@@ -114,7 +113,7 @@ export default class SubscriptionCrud {
         // 7 days
         ttl: timestamp + 86400 * 7,
         result
-      } as WebhookReceipt;
+      };
 
       await this.client.put({
         TableName: WEBHOOK_RECEIPTS_TABLE,
@@ -125,7 +124,7 @@ export default class SubscriptionCrud {
 
       return webhookReceipt;
     } catch (err) {
-      this.logger.error({ err, subscription, result }, `failed to save receipt`);
+      this.logger.error({ err, subscription, result }, `failed to save webhook receipt`);
       throw err;
     }
   }
