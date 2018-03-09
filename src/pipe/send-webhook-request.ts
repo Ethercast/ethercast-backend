@@ -1,45 +1,40 @@
 import 'source-map-support/register';
 import { Context, Handler, SNSEvent } from 'aws-lambda';
 import fetch from 'node-fetch';
-import { JoiLog, Log } from '@ethercast/model';
 import { Subscription, WebhookReceiptResult } from '../util/models';
 import logger from '../util/logger';
 import * as Joi from 'joi';
 import SubscriptionCrud from '../util/subscription-crud';
-import { DynamoDB, SNS } from 'aws-sdk';
-import * as _ from 'underscore';
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
+import * as SNS from 'aws-sdk/clients/sns';
 
 const client = new DynamoDB.DocumentClient();
 const sns = new SNS();
 const crud = new SubscriptionCrud({ client, logger });
 
-async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription, log: Log): Promise<WebhookReceiptResult> {
-  const meta = _.pick(log, 'address', 'transactionHash', 'logIndex');
-
+async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription, message: string): Promise<WebhookReceiptResult> {
   // we create this here to correlate logs from sending the webhook with the receipt we store in dynamo
   try {
-    logger.debug({ meta, subscriptionId: subscription.id }, 'notifying subscription');
+    logger.debug({ subscriptionId: subscription.id }, 'notifying subscription');
 
     const response = await fetch(
       subscription.webhookUrl,
       {
         method: 'POST',
+        // TODO: sign message
         headers: {
           'user-agent': 'ethercast',
-          'x-ethercast-subscription-id': subscription.id
+          'x-ethercast-subscription-id': subscription.id,
+          'content-type': 'application/json'
         },
-        body: JSON.stringify(log),
+        body: message,
         timeout: 1000
       }
     );
 
     const status = response.status;
 
-    logger.info({
-      meta,
-      subscriptionId: subscription.id,
-      responseStatus: status
-    }, `delivered event`);
+    logger.info({ subscriptionId: subscription.id, responseStatus: status }, `delivered event`);
 
     const success = status >= 200 && status < 300;
 
@@ -58,15 +53,15 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
 
     return { success, statusCode: status };
   } catch (err) {
-    logger.warn({ err, log, subscription, meta }, `failed to send log to subscription`);
+    logger.warn({ err, subscription }, `failed to send log to subscription`);
 
     return { success: false, statusCode: 0 };
   }
 }
 
-async function sendLogNotification(crud: SubscriptionCrud, subscriptionArn: string, log: Log) {
+async function sendLogNotification(crud: SubscriptionCrud, subscriptionArn: string, message: string) {
   const subscription = await crud.getByArn(subscriptionArn);
-  const receipt = await notifyEndpoint(crud, subscription, log);
+  const receipt = await notifyEndpoint(crud, subscription, message);
   await crud.saveReceipt(subscription, receipt);
 }
 
@@ -90,26 +85,26 @@ export const handle: Handler = async (event: SNSEvent, context: Context) => {
 
   if (error) {
     logger.error({ error }, 'sns event failed joi validation');
-    context.succeed('sns event failed joi validation');
+    context.fail(new Error('sns event failed joi validation'));
     return;
   }
 
-  for (let i = 0; i < value.Records.length; ++i) {
+  for (let i = 0; i < value.Records.length; i++) {
     const { EventSubscriptionArn, Sns: { Message } } = value.Records[i];
-
-    const { value: log, error } = JoiLog.validate(JSON.parse(Message), { allowUnknown: true });
 
     if (error) {
       logger.error({ error }, 'log failed validation');
-      context.succeed('log failed validation');
+      context.fail(new Error('log failed validation'));
     } else {
       try {
-        await sendLogNotification(crud, EventSubscriptionArn, log);
-        context.succeed('log notification sent');
+        await sendLogNotification(crud, EventSubscriptionArn, Message);
       } catch (err) {
         logger.error({ err, record: value.Records[i] }, 'failed to send log notification');
-        context.succeed('failed to send');
+        context.fail(new Error('failed to send a notification'));
+        return;
       }
     }
   }
+
+  context.succeed('delivered webhook');
 };

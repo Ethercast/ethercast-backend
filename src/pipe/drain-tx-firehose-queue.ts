@@ -1,8 +1,8 @@
 import 'source-map-support/register';
 import { Context, Handler } from 'aws-lambda';
-import { Log, mustBeValidLog } from '@ethercast/model';
+import { mustBeValidTransaction, Transaction } from '@ethercast/model';
 import logger from '../util/logger';
-import { LOG_QUEUE_NAME, NOTIFICATION_TOPIC_NAME } from '../util/env';
+import { NOTIFICATION_TOPIC_NAME, TX_QUEUE_NAME } from '../util/env';
 import LogMessageProducer from '../util/message-producer';
 import SnsSubscriptionUtil from '../util/sns-subscription-util';
 import QueueDrainer from '@ethercast/queue-drainer';
@@ -31,23 +31,23 @@ export const handle: Handler = async (event, context: Context) => {
       throw new Error(`missing message body`);
     }
 
-    let log: Log;
+    let tx: Transaction;
     try {
-      log = mustBeValidLog(JSON.parse(message.Body));
+      tx = mustBeValidTransaction(JSON.parse(message.Body));
     } catch (err) {
       logger.error({ err }, 'invalid log received');
       throw new Error(`log failed validation`);
     }
 
-    await producer.publishLog(log);
+    await producer.publishTransaction(tx);
   };
 
 
   try {
-    const { QueueUrl } = await sqs.getQueueUrl({ QueueName: LOG_QUEUE_NAME }).promise();
+    const { QueueUrl } = await sqs.getQueueUrl({ QueueName: TX_QUEUE_NAME }).promise();
 
     if (!QueueUrl) {
-      throw new Error(`could not get queue url for name: ${LOG_QUEUE_NAME}`);
+      throw new Error(`could not get queue url for name: ${TX_QUEUE_NAME}`);
     }
 
     logger.info({ QueueUrl }, 'dequeueing from queue');

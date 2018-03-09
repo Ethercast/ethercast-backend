@@ -1,4 +1,4 @@
-import { FilterType } from '../src/util/models';
+import { LogFilterType } from '../src/util/models';
 import { expect } from 'chai';
 import toFilterPolicy from '../src/util/to-filter-policy';
 
@@ -7,22 +7,22 @@ describe('#toFilterPolicy', () => {
   it('array-ifies all items', () => {
     expect(
       toFilterPolicy({
-        [FilterType.address]: 'abc'
+        [LogFilterType.address]: 'abc'
       })
     ).to.deep.eq({
-      [FilterType.address]: ['abc']
+      [LogFilterType.address]: ['abc']
     });
   });
 
   it('downcases all attributes', () => {
     expect(
       toFilterPolicy({
-        [FilterType.address]: 'aBc',
-        [FilterType.topic0]: ['BaC']
+        [LogFilterType.address]: 'aBc',
+        [LogFilterType.topic0]: ['BaC']
       })
     ).to.deep.eq({
-      [FilterType.address]: ['abc'],
-      [FilterType.topic0]: ['bac']
+      [LogFilterType.address]: ['abc'],
+      [LogFilterType.topic0]: ['bac']
     });
   });
 

@@ -1,7 +1,7 @@
-import { SubscriptionFilters } from './models';
+import { LogSubscriptionFilters } from './models';
 import * as _ from 'underscore';
 
-export default function getFilterCombinations(filters: SubscriptionFilters) {
+export default function getFilterCombinations(filters: LogSubscriptionFilters) {
   const filterCounts: (number | null)[] = _.map(
     filters,
     values => {

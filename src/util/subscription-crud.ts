@@ -1,4 +1,3 @@
-import { DynamoDB } from 'aws-sdk';
 import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from './env';
 import {
   JoiSubscription,
@@ -10,6 +9,7 @@ import {
 } from './models';
 import uuid = require('uuid');
 import * as Logger from 'bunyan';
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 
 const SUBSCRIPTIONS_USER_INDEX = 'ByUser';
 const SUBSCRIPTIONS_ARN_INDEX = 'BySubscriptionArn';

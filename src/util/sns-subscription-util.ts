@@ -1,9 +1,10 @@
 import * as _ from 'underscore';
-import { Lambda, SNS } from 'aws-sdk';
-import { SubscriptionFilters } from './models';
+import { LogSubscriptionFilters } from './models';
 import toFilterPolicy from './to-filter-policy';
 import logger from './logger';
 import { NOTIFICATION_LAMBDA_NAME } from './env';
+import * as SNS from 'aws-sdk/clients/sns';
+import * as Lambda from 'aws-sdk/clients/lambda';
 
 export default class SnsSubscriptionUtil {
   private sns: SNS;
@@ -58,7 +59,7 @@ export default class SnsSubscriptionUtil {
     return AliasArn;
   };
 
-  async createSNSSubscription(notificationLambdaName: string, topicName: string, subscriptionId: string, filters: SubscriptionFilters): Promise<string> {
+  async createSNSSubscription(notificationLambdaName: string, topicName: string, subscriptionId: string, filters: LogSubscriptionFilters): Promise<string> {
     const TopicArn = await this.getTopicArn(topicName);
     const Endpoint = await this.createLambdaAlias(TopicArn, notificationLambdaName, subscriptionId);
 

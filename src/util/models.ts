@@ -46,7 +46,7 @@ export enum SubscriptionStatus {
   deactivated = 'deactivated'
 }
 
-export enum FilterType {
+export enum LogFilterType {
   address = 'address',
   topic0 = 'topic0',
   topic1 = 'topic1',
@@ -54,8 +54,13 @@ export enum FilterType {
   topic3 = 'topic3'
 }
 
+export enum TransactionFilterType {
+  from = 'from',
+  to = 'to'
+}
+
 export type FilterOptionValue = string | string[] | null;
-export type SubscriptionFilters = Partial<{[filterType in FilterType]: FilterOptionValue}>;
+export type LogSubscriptionFilters = Partial<{[filterType in LogFilterType]: FilterOptionValue}>;
 
 export interface Subscription {
   id: string; // uuid v4
@@ -65,7 +70,7 @@ export interface Subscription {
   description?: string; // reasonable max length - longer
   webhookUrl: string;
   status: SubscriptionStatus;
-  filters: SubscriptionFilters;
+  filters: LogSubscriptionFilters;
   subscriptionArn: string;
 }
 

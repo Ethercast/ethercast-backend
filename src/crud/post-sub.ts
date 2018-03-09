@@ -1,3 +1,4 @@
+///<reference path="../../node_modules/aws-sdk/clients/dynamodb.d.ts"/>
 import 'source-map-support/register';
 import { JoiSubscriptionPostRequest, Subscription } from '../util/models';
 import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway-handler';
@@ -5,9 +6,11 @@ import getFilterCombinations from '../util/get-filter-combinations';
 import logger from '../util/logger';
 import SnsSubscriptionUtil from '../util/sns-subscription-util';
 import { NOTIFICATION_LAMBDA_NAME, NOTIFICATION_TOPIC_NAME } from '../util/env';
-import { Lambda, SNS, DynamoDB } from 'aws-sdk';
 import SubscriptionCrud from '../util/subscription-crud';
 import * as uuid from 'uuid';
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
+import * as Lambda from 'aws-sdk/clients/lambda';
+import * as SNS from 'aws-sdk/clients/sns';
 
 const TOO_MANY_COMBINATIONS = simpleError(
   400,

@@ -2,7 +2,8 @@ import 'source-map-support/register';
 import SubscriptionCrud from '../util/subscription-crud';
 import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway-handler';
 import logger from '../util/logger';
-import { SNS, DynamoDB } from 'aws-sdk';
+import * as SNS from 'aws-sdk/clients/sns';
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 
 const sns = new SNS();
 const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger });

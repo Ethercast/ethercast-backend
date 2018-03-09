@@ -1,8 +1,8 @@
 import 'source-map-support/register';
 import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway-handler';
-import { DynamoDB } from 'aws-sdk';
 import SubscriptionCrud from '../util/subscription-crud';
 import logger from '../util/logger';
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 
 export const SUBSCRIPTION_NOT_FOUND = simpleError(404, 'Subscription not found!');
 

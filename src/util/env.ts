@@ -10,5 +10,6 @@ export const NOTIFICATION_TOPIC_NAME: string = env.get('NOTIFICATION_TOPIC_NAME'
 export const NOTIFICATION_LAMBDA_NAME: string = env.get('NOTIFICATION_LAMBDA_NAME').required().asString();
 
 export const LOG_QUEUE_NAME: string = env.get('LOG_QUEUE_NAME').required().asString();
+export const TX_QUEUE_NAME: string = env.get('TX_QUEUE_NAME').required().asString();
 
 export const TOKEN_ISSUER: string = env.get('TOKEN_ISSUER').required().asUrlString();

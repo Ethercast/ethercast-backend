@@ -1,8 +1,8 @@
 import 'source-map-support/register';
 import createApiGatewayHandler from '../util/create-api-gateway-handler';
 import SubscriptionCrud from '../util/subscription-crud';
-import { DynamoDB } from 'aws-sdk';
 import logger from '../util/logger';
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 
 const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger });
 

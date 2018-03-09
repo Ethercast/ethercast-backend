@@ -10,7 +10,7 @@
     "test": "ts-mocha tests/**/*.test.ts"
   },
   "devDependencies": {
-    "@ethercast/queue-drainer": "0.0.2",
+    "@ethercast/queue-drainer": "0.0.4",
     "@types/aws-lambda": "0.0.22",
     "@types/bunyan": "^1.8.4",
     "@types/chai": "^4.1.2",
@@ -27,7 +27,6 @@
     "chai": "^4.1.2",
     "mocha": "^4.1.0",
     "serverless-dynamodb-autoscaling": "^0.6.2",
-    "serverless-iam-roles-per-function": "^0.1.5",
     "serverless-pseudo-parameters": "^1.4.2",
     "serverless-webpack": "^4.0.0",
     "ts-loader": "^2.3.7",
@@ -37,7 +36,7 @@
     "webpack-node-externals": "^1.6.0"
   },
   "dependencies": {
-    "@ethercast/model": "0.0.1",
+    "@ethercast/model": "0.0.13",
     "bignumber.js": "^6.0.0",
     "bunyan": "^1.8.12",
     "env-var": "^3.2.0",
