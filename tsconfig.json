@@ -4,6 +4,9 @@
     "strictNullChecks": true,
     "allowSyntheticDefaultImports": false,
     "sourceMap": true,
+    "types": [
+      "node"
+    ],
     "lib": [
       "es5",
       "es2015.promise"
