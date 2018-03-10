@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "ts-mocha tests/**/*.test.ts",
+    "deploy:dev": "sls deploy",
     "deploy:mainnet": "sls deploy --stage mainnet",
     "deploy:kovan": "sls deploy --stage kovan"
   },
