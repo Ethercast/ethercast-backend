@@ -1,4 +1,4 @@
-import { FilterOptionValue, LogSubscriptionFilters, TransactionSubscriptionFilters } from './models';
+import { FilterOptionValue, LogSubscriptionFilters, TransactionSubscriptionFilters } from '@ethercast/backend-model';
 import _ = require('underscore');
 
 type FilterPolicy = {
@@ -10,7 +10,7 @@ export default function toFilterPolicy(filter: LogSubscriptionFilters | Transact
     _.omit(filter, (value: FilterOptionValue) => value === null),
     value => {
       if (typeof value === 'string') {
-        return [value.toLowerCase()];
+        return [ value.toLowerCase() ];
       } else {
         return value.map((v: string) => v.toLowerCase());
       }

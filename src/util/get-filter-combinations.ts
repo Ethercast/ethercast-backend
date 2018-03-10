@@ -1,4 +1,4 @@
-import { LogSubscriptionFilters, TransactionSubscriptionFilters } from './models';
+import { LogSubscriptionFilters, TransactionSubscriptionFilters } from '@ethercast/backend-model';
 import * as _ from 'underscore';
 
 export default function getFilterCombinations(filters: LogSubscriptionFilters | TransactionSubscriptionFilters) {

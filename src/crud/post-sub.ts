@@ -1,8 +1,12 @@
 import 'source-map-support/register';
 import {
-  JoiSubscriptionPostRequest, LogSubscription, Subscription, SubscriptionPostRequest,
-  SubscriptionType, TransactionSubscription, TransactionSubscriptionFilters
-} from '../util/models';
+  JoiSubscriptionPostRequest,
+  LogSubscription,
+  Subscription,
+  SubscriptionPostRequest,
+  SubscriptionType,
+  TransactionSubscription
+} from '@ethercast/backend-model';
 import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway-handler';
 import getFilterCombinations from '../util/get-filter-combinations';
 import logger from '../util/logger';

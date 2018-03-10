@@ -6,10 +6,10 @@ import {
   SubscriptionStatus,
   WebhookReceipt,
   WebhookReceiptResult
-} from './models';
-import uuid = require('uuid');
+} from '@ethercast/backend-model';
 import * as Logger from 'bunyan';
 import * as DynamoDB from 'aws-sdk/clients/dynamodb';
+import uuid = require('uuid');
 
 const SUBSCRIPTIONS_USER_INDEX = 'ByUser';
 const SUBSCRIPTIONS_ARN_INDEX = 'BySubscriptionArn';

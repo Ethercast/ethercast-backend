@@ -1,5 +1,5 @@
 import * as _ from 'underscore';
-import { LogSubscriptionFilters, TransactionSubscriptionFilters } from './models';
+import { LogSubscriptionFilters, TransactionSubscriptionFilters } from '@ethercast/backend-model';
 import toFilterPolicy from './to-filter-policy';
 import { SEND_WEBHOOK_LAMBDA_NAME } from './env';
 import * as SNS from 'aws-sdk/clients/sns';

@@ -1,7 +1,7 @@
 import 'source-map-support/register';
 import { Context, Handler, SNSEvent } from 'aws-lambda';
 import fetch from 'node-fetch';
-import { Subscription, WebhookReceiptResult } from '../util/models';
+import { Subscription, WebhookReceiptResult } from '@ethercast/backend-model';
 import logger from '../util/logger';
 import * as Joi from 'joi';
 import SubscriptionCrud from '../util/subscription-crud';
@@ -89,13 +89,13 @@ export const handle: Handler = async (event: SNSEvent, context: Context) => {
   }
 
   for (let i = 0; i < value.Records.length; i++) {
-    const { EventSubscriptionArn, Sns: { Message } } = value.Records[i];
+    const { EventSubscriptionArn, Sns: { Message } } = value.Records[ i ];
 
 
     try {
       await sendLogNotification(crud, EventSubscriptionArn, Message);
     } catch (err) {
-      logger.error({ err, record: value.Records[i] }, 'failed to send log notification');
+      logger.error({ err, record: value.Records[ i ] }, 'failed to send log notification');
       context.fail(new Error('failed to send a notification'));
       return;
     }
