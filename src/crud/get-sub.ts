@@ -3,10 +3,14 @@ import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway
 import SubscriptionCrud from '../util/subscription-crud';
 import logger from '../util/logger';
 import * as DynamoDB from 'aws-sdk/clients/dynamodb';
+import * as Lambda from 'aws-sdk/clients/lambda';
+import * as SNS from 'aws-sdk/clients/sns';
+import SnsSubscriptionUtil from '../util/sns-subscription-util';
 
 export const SUBSCRIPTION_NOT_FOUND = simpleError(404, 'Subscription not found!');
 
-const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger });
+const subscriptionUtil = new SnsSubscriptionUtil({ logger, sns: new SNS(), lambda: new Lambda() });
+const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger, subscriptionUtil });
 
 export const handle = createApiGatewayHandler(
   async ({ pathParameters: { id }, user }) => {

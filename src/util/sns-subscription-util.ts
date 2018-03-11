@@ -61,6 +61,10 @@ export default class SnsSubscriptionUtil {
     return AliasArn;
   };
 
+  async unsubscribe(subscriptionArn: string): Promise<void> {
+    await this.sns.unsubscribe({ SubscriptionArn: subscriptionArn }).promise();
+  }
+
   async createSNSSubscription(notificationLambdaName: string, topicName: string, subscriptionId: string, filters: LogSubscriptionFilters | TransactionSubscriptionFilters): Promise<string> {
     const TopicArn = await this.getTopicArn(topicName);
     const Endpoint = await this.createLambdaAlias(TopicArn, notificationLambdaName, subscriptionId);

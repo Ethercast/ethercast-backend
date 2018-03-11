@@ -7,10 +7,14 @@ import * as Joi from 'joi';
 import SubscriptionCrud from '../util/subscription-crud';
 import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import * as SNS from 'aws-sdk/clients/sns';
+import SnsSubscriptionUtil from '../util/sns-subscription-util';
+import * as Lambda from 'aws-sdk/clients/lambda';
 
 const client = new DynamoDB.DocumentClient();
 const sns = new SNS();
-const crud = new SubscriptionCrud({ client, logger });
+const lambda = new Lambda();
+const subscriptionUtil = new SnsSubscriptionUtil({ logger, sns, lambda });
+const crud = new SubscriptionCrud({ client, logger, subscriptionUtil });
 
 async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription, message: string): Promise<WebhookReceiptResult> {
   // we create this here to correlate logs from sending the webhook with the receipt we store in dynamo
@@ -42,8 +46,7 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
       logger.info({ subscription }, 'respecting 410 response with deactivation');
 
       try {
-        await sns.unsubscribe({ SubscriptionArn: subscription.subscriptionArn }).promise();
-        await crud.deactivate(subscription.id);
+        await crud.deactivate(subscription);
         logger.info({ subscription }, 'unsubscribed due to 410 response');
       } catch (err) {
         logger.error({ err }, 'failed to unsubscribe in response to a 410');

@@ -1,70 +1,118 @@
-import { SUBSCRIPTIONS_TABLE, WEBHOOK_RECEIPTS_TABLE } from './env';
 import {
+  LOG_NOTIFICATION_TOPIC_NAME,
+  SEND_WEBHOOK_LAMBDA_NAME,
+  SUBSCRIPTIONS_TABLE,
+  TX_NOTIFICATION_TOPIC_NAME,
+  WEBHOOK_RECEIPTS_TABLE
+} from './env';
+import {
+  CreateLogSubscriptionRequest,
+  CreateTransactionSubscriptionRequest,
   JoiSubscription,
   JoiWebhookReceiptResult,
   Subscription,
   SubscriptionStatus,
+  SubscriptionType,
   WebhookReceipt,
   WebhookReceiptResult
 } from '@ethercast/backend-model';
 import * as Logger from 'bunyan';
 import * as DynamoDB from 'aws-sdk/clients/dynamodb';
-import uuid = require('uuid');
 import generateSecret from './generate-secret';
+import SnsSubscriptionUtil from './sns-subscription-util';
+import uuid = require('uuid');
 
 const SUBSCRIPTIONS_USER_INDEX = 'ByUser';
 const SUBSCRIPTIONS_ARN_INDEX = 'BySubscriptionArn';
 const WEBHOOK_RECEIPTS_SUBSCRIPTION_ID_INDEX = 'BySubscriptionId';
 
+interface SubscriptionCrudConstructorOptions {
+  client: DynamoDB.DocumentClient;
+  logger: Logger;
+  subscriptionUtil: SnsSubscriptionUtil;
+}
+
+const TOPIC_NAME_MAP = {
+  [ SubscriptionType.log ]: LOG_NOTIFICATION_TOPIC_NAME,
+  [ SubscriptionType.transaction ]: TX_NOTIFICATION_TOPIC_NAME
+};
+
 export default class SubscriptionCrud {
   private client: DynamoDB.DocumentClient;
+  private subscriptionUtil: SnsSubscriptionUtil;
   private logger: Logger;
 
-  constructor({ client, logger }: { client: DynamoDB.DocumentClient, logger: Logger }) {
+  constructor({ client, logger, subscriptionUtil }: SubscriptionCrudConstructorOptions) {
     this.client = client;
     this.logger = logger;
+    this.subscriptionUtil = subscriptionUtil;
   }
 
-  async save(subscription: Partial<Subscription>): Promise<Subscription> {
-    this.logger.info({ subscription }, 'saving subscription to dynamo');
+  async create(validatedRequest: CreateTransactionSubscriptionRequest | CreateLogSubscriptionRequest, user: string): Promise<Subscription> {
+    this.logger.info({ validatedRequest, user }, 'creating subscription');
 
-    const { error, value: toSave } = JoiSubscription.validate({
-      id: uuid.v4(),
-      ...subscription,
-      secret: generateSecret(),
-      timestamp: (new Date()).getTime(),
-      status: SubscriptionStatus.active
+    const subscriptionId = uuid.v4();
+
+    // first subscribe to the sns topic
+    let subscriptionArn: string;
+    try {
+      // a lambda arn may only be subscribed to a topic once, so publish a new version/arn
+      subscriptionArn = await this.subscriptionUtil.createSNSSubscription(
+        SEND_WEBHOOK_LAMBDA_NAME,
+        TOPIC_NAME_MAP[ validatedRequest.type ],
+        subscriptionId,
+        validatedRequest.filters
+      );
+
+    } catch (err) {
+      this.logger.error({ validatedRequest, user, err }, 'failed to create SNS subscription');
+
+      throw err;
+    }
+
+    const { value: subscription, error } = JoiSubscription.validate({
+      ...validatedRequest,
+      id: subscriptionId,
+      timestamp: Math.round(Date.now() / 1000),
+      status: SubscriptionStatus.active,
+      user,
+      subscriptionArn,
+      secret: await generateSecret(64)
     });
 
     if (error) {
-      this.logger.error({ validationError: error }, 'subscription failed pre-save validation');
-      throw new Error('Validation error encountered while saving subscription');
+      this.logger.error({ validationError: error, subscription }, 'subscription failed validation');
+      throw new Error('Subscription failed validation');
     }
 
     await this.client.put({
       TableName: SUBSCRIPTIONS_TABLE,
-      Item: toSave
+      Item: subscription
     }).promise();
 
-    this.logger.info({ saved: toSave }, 'subscription created');
+    this.logger.info({ saved: subscription }, 'subscription created');
 
-    return this.get(toSave.id);
+    return subscription;
   }
 
-  async get(id: string, ConsistentRead: boolean = true): Promise<Subscription> {
-    this.logger.info({ id, ConsistentRead }, 'getting subscription');
+  async get(id: string): Promise<Subscription> {
+    this.logger.info({ id }, 'getting subscription');
 
     const { Item } = await this.client.get({
       TableName: SUBSCRIPTIONS_TABLE,
-      Key: {
-        id
-      },
-      ConsistentRead
+      Key: { id },
+      ConsistentRead: true
     }).promise();
 
-    return Item as Subscription;
-  }
+    const { value, error } = JoiSubscription.validate(Item);
 
+    if (error) {
+      this.logger.error({ validationError: error, id }, 'subscription failed validation on get');
+      throw new Error(`Subscription did not match the expected schema.`);
+    }
+
+    return value as Subscription;
+  }
 
   async getByArn(subscriptionArn: string): Promise<Subscription> {
     try {
@@ -87,7 +135,17 @@ export default class SubscriptionCrud {
         throw new Error('too many matching arns');
       }
 
-      return Items[0] as Subscription;
+      const { value, error } = JoiSubscription.validate(Items[ 0 ]);
+
+      if (error) {
+        this.logger.error({
+          validationError: error,
+          subscriptionArn
+        }, 'subscription failed validation on getByArn');
+        throw new Error(`subscription did not match the expected schema`);
+      }
+
+      return value as Subscription;
     } catch (err) {
       this.logger.error({ err, subscriptionArn }, 'failed to get subscription by arn');
       throw err;
@@ -131,12 +189,14 @@ export default class SubscriptionCrud {
     }
   }
 
-  async deactivate(id: string): Promise<Subscription> {
-    this.logger.info({ id }, 'DEACTIVATING subscription');
+  async deactivate(subscription: Subscription): Promise<Subscription> {
+    this.logger.info({ subscription }, 'deactivating subscription');
+
+    await this.subscriptionUtil.unsubscribe(subscription.subscriptionArn);
 
     await this.client.update({
       TableName: SUBSCRIPTIONS_TABLE,
-      Key: { id },
+      Key: { id: subscription.id },
       UpdateExpression: 'set #status = :status',
       ExpressionAttributeNames: {
         '#status': 'status'
@@ -146,23 +206,7 @@ export default class SubscriptionCrud {
       }
     }).promise();
 
-    return this.get(id);
-  }
-
-  async listReceipts(subscriptionId: string): Promise<WebhookReceipt[]> {
-    this.logger.info({ subscriptionId }, `listing webhook receipts`);
-
-    const { Items } = await this.client.query({
-      TableName: WEBHOOK_RECEIPTS_TABLE,
-      IndexName: WEBHOOK_RECEIPTS_SUBSCRIPTION_ID_INDEX,
-      KeyConditionExpression: 'subscriptionId = :subscriptionId',
-      ExpressionAttributeValues: {
-        ':subscriptionId': subscriptionId
-      },
-      Limit: 20
-    }).promise();
-
-    return Items as WebhookReceipt[];
+    return this.get(subscription.id);
   }
 
   async list(user: string): Promise<Subscription[]> {
@@ -181,5 +225,21 @@ export default class SubscriptionCrud {
     }).promise();
 
     return Items as Subscription[];
+  }
+
+  async listReceipts(subscriptionId: string): Promise<WebhookReceipt[]> {
+    this.logger.info({ subscriptionId }, `listing webhook receipts`);
+
+    const { Items } = await this.client.query({
+      TableName: WEBHOOK_RECEIPTS_TABLE,
+      IndexName: WEBHOOK_RECEIPTS_SUBSCRIPTION_ID_INDEX,
+      KeyConditionExpression: 'subscriptionId = :subscriptionId',
+      ExpressionAttributeValues: {
+        ':subscriptionId': subscriptionId
+      },
+      Limit: 20
+    }).promise();
+
+    return Items as WebhookReceipt[];
   }
 }

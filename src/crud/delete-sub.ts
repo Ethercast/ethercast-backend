@@ -4,9 +4,12 @@ import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway
 import logger from '../util/logger';
 import * as SNS from 'aws-sdk/clients/sns';
 import * as DynamoDB from 'aws-sdk/clients/dynamodb';
+import * as Lambda from 'aws-sdk/clients/lambda';
+import SnsSubscriptionUtil from '../util/sns-subscription-util';
 
 const sns = new SNS();
-const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger });
+const subscriptionUtil = new SnsSubscriptionUtil({ logger, sns, lambda: new Lambda() });
+const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger, subscriptionUtil });
 
 export const handle = createApiGatewayHandler(
   async ({ pathParameters: { id }, user }) => {
@@ -19,14 +22,12 @@ export const handle = createApiGatewayHandler(
       );
     }
 
-    await sns.unsubscribe({ SubscriptionArn: subscription.subscriptionArn }).promise();
-
     logger.info({ subscription }, 'unsubscribed subscription arn');
 
-    await crud.deactivate(subscription.id);
+    const saved = await crud.deactivate(subscription);
 
     logger.info({ subscription }, `deactivated subscription`);
 
-    return { statusCode: 204 };
+    return { statusCode: 200, body: saved };
   }
 );

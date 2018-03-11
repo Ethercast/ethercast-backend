@@ -1,19 +1,14 @@
 import 'source-map-support/register';
 import {
-  JoiCreateSubscriptionRequest,
-  LogSubscription,
-  Subscription,
-  SubscriptionPostRequest,
-  SubscriptionType,
-  TransactionSubscription
+  CreateLogSubscriptionRequest,
+  CreateTransactionSubscriptionRequest,
+  JoiCreateSubscriptionRequest
 } from '@ethercast/backend-model';
 import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway-handler';
 import getFilterCombinations from '../util/get-filter-combinations';
 import logger from '../util/logger';
 import SnsSubscriptionUtil from '../util/sns-subscription-util';
-import { LOG_NOTIFICATION_TOPIC_NAME, SEND_WEBHOOK_LAMBDA_NAME, TX_NOTIFICATION_TOPIC_NAME } from '../util/env';
 import SubscriptionCrud from '../util/subscription-crud';
-import * as uuid from 'uuid';
 import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import * as Lambda from 'aws-sdk/clients/lambda';
 import * as SNS from 'aws-sdk/clients/sns';
@@ -30,13 +25,8 @@ const FIREHOSE_NOT_ALLOWED = simpleError(
 
 const sns = new SNS();
 const lambda = new Lambda();
-const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger });
 const subscriptionUtil = new SnsSubscriptionUtil({ logger, lambda, sns });
-
-const TOPIC_NAME_MAP = {
-  [SubscriptionType.log]: LOG_NOTIFICATION_TOPIC_NAME,
-  [SubscriptionType.transaction]: TX_NOTIFICATION_TOPIC_NAME
-};
+const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger, subscriptionUtil });
 
 export const handle = createApiGatewayHandler(
   async ({ user, parsedBody }) => {
@@ -53,7 +43,7 @@ export const handle = createApiGatewayHandler(
       };
     }
 
-    const request = value as SubscriptionPostRequest;
+    const request: CreateTransactionSubscriptionRequest | CreateLogSubscriptionRequest = value as any;
 
     // validate that it has less than 100 combinations
     const filterCombinations = getFilterCombinations(request.filters);
@@ -64,46 +54,8 @@ export const handle = createApiGatewayHandler(
       return TOO_MANY_COMBINATIONS;
     }
 
-    const subscriptionId = uuid.v4();
-
-    let subscriptionArn: string;
     try {
-      // a lambda arn may only be subscribed to a topic once, so publish a new version/arn
-      subscriptionArn = await subscriptionUtil.createSNSSubscription(
-        SEND_WEBHOOK_LAMBDA_NAME,
-        TOPIC_NAME_MAP[request.type],
-        subscriptionId,
-        request.filters
-      );
-
-    } catch (err) {
-      logger.error({ err }, 'failed sns/lambda calls');
-
-      throw err;
-    }
-
-    try {
-      let sub: Subscription;
-
-      if (request.type === SubscriptionType.log) {
-        sub = {
-          ...request,
-          id: subscriptionId,
-          subscriptionArn,
-          user
-        } as LogSubscription;
-      } else if (request.type === SubscriptionType.transaction) {
-        sub = {
-          ...request,
-          id: subscriptionId,
-          subscriptionArn,
-          user
-        } as TransactionSubscription;
-      } else {
-        throw new Error('unknown subscription type');
-      }
-
-      const saved = await crud.save(sub);
+      const saved = await crud.create(request, user);
 
       return {
         statusCode: 200,
