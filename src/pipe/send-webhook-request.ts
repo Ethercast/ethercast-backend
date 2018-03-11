@@ -30,7 +30,7 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
           'x-ethercast-subscription-id': subscription.id,
           'content-type': 'application/json'
         },
-        body: JSON.stringify(parseMessage(message)),
+        body: message,
         timeout: 2000
       }
     );
@@ -95,7 +95,9 @@ export const handle: Handler = async (event: SNSEvent, context: Context) => {
     const { EventSubscriptionArn, Sns: { Message } } = value.Records[ i ];
 
     try {
-      await sendLogNotification(crud, EventSubscriptionArn, Message);
+      const parsed = JSON.stringify(parseMessage(Message));
+
+      await sendLogNotification(crud, EventSubscriptionArn, parsed);
     } catch (err) {
       logger.error({ err, record: value.Records[ i ] }, 'failed to send log notification');
       context.fail(new Error('failed to send a notification'));

@@ -4,6 +4,7 @@ import toLogMessageAttributes from './to-log-message-attributes';
 import * as SNS from 'aws-sdk/clients/sns';
 import toTxMessageAttributes from './to-tx-message-attributes';
 import { createMessage } from '@ethercast/message-compressor';
+import { MessageAttributeMap } from 'aws-sdk/clients/sns';
 
 export default class MessageProducer {
   private sns: SNS;
@@ -16,11 +17,9 @@ export default class MessageProducer {
     logger.debug({ topicArn }, `constructed log message producer`);
   }
 
-  public async publishLog(log: Log) {
-    const MessageAttributes = toLogMessageAttributes(log);
-
+  private async publish(MessageAttributes: MessageAttributeMap, obj: object) {
     const { MessageId } = await this.sns.publish({
-      Message: createMessage(log),
+      Message: createMessage(obj),
       MessageAttributes,
       TopicArn: this.topicArn
     }).promise();
@@ -28,15 +27,11 @@ export default class MessageProducer {
     logger.debug({ MessageId, MessageAttributes, topicArn: this.topicArn }, `published log message`);
   }
 
+  public async publishLog(log: Log) {
+    await this.publish(toLogMessageAttributes(log), log);
+  }
+
   public async publishTransaction(transaction: Transaction) {
-    const MessageAttributes = toTxMessageAttributes(transaction);
-
-    const { MessageId } = await this.sns.publish({
-      Message: JSON.stringify(transaction),
-      MessageAttributes,
-      TopicArn: this.topicArn
-    }).promise();
-
-    logger.debug({ MessageId, MessageAttributes, topicArn: this.topicArn }, `published log message`);
+    await this.publish(toTxMessageAttributes(transaction), transaction);
   }
 }
