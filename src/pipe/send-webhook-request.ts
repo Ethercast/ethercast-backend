@@ -1,4 +1,3 @@
-import 'source-map-support/register';
 import { Context, Handler, SNSEvent } from 'aws-lambda';
 import fetch from 'node-fetch';
 import { Subscription, WebhookReceiptResult } from '@ethercast/backend-model';

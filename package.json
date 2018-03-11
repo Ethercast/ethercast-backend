@@ -50,7 +50,6 @@
     "node-fetch": "^2.0.0",
     "qs": "^6.5.1",
     "sns-validator": "^0.3.4",
-    "source-map-support": "^0.5.3",
     "underscore": "^1.8.3",
     "url-regex": "^4.1.1",
     "uuid": "^3.2.1"

@@ -1,4 +1,3 @@
-import 'source-map-support/register';
 import { Handler } from 'aws-lambda';
 import { Log, mustBeValidLog } from '@ethercast/model';
 import logger from '../util/logger';

@@ -1,4 +1,3 @@
-import 'source-map-support/register';
 import createApiGatewayHandler, { BAD_REQUEST } from '../util/create-api-gateway-handler';
 import { SUBSCRIPTION_NOT_FOUND } from './get-sub';
 import SubscriptionCrud from '../util/subscription-crud';
