@@ -3,6 +3,7 @@ import { Log, Transaction } from '@ethercast/model';
 import toLogMessageAttributes from './to-log-message-attributes';
 import * as SNS from 'aws-sdk/clients/sns';
 import toTxMessageAttributes from './to-tx-message-attributes';
+import { createMessage } from '@ethercast/message-compressor';
 
 export default class MessageProducer {
   private sns: SNS;
@@ -19,7 +20,7 @@ export default class MessageProducer {
     const MessageAttributes = toLogMessageAttributes(log);
 
     const { MessageId } = await this.sns.publish({
-      Message: JSON.stringify(log),
+      Message: createMessage(log),
       MessageAttributes,
       TopicArn: this.topicArn
     }).promise();

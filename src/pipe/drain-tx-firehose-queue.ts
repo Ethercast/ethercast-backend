@@ -8,7 +8,7 @@ import QueueDrainer from '@ethercast/queue-drainer';
 import * as SQS from 'aws-sdk/clients/sqs';
 import * as SNS from 'aws-sdk/clients/sns';
 import * as Lambda from 'aws-sdk/clients/lambda';
-import { parseMessage } from '../util/message-compressor';
+import { parseMessage } from '@ethercast/message-compressor';
 
 const sqs = new SQS();
 const sns = new SNS();

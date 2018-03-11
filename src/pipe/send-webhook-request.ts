@@ -8,6 +8,7 @@ import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import * as SNS from 'aws-sdk/clients/sns';
 import SnsSubscriptionUtil from '../util/sns-subscription-util';
 import * as Lambda from 'aws-sdk/clients/lambda';
+import { parseMessage } from '@ethercast/message-compressor';
 
 const client = new DynamoDB.DocumentClient();
 const sns = new SNS();
@@ -29,8 +30,8 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
           'x-ethercast-subscription-id': subscription.id,
           'content-type': 'application/json'
         },
-        body: message,
-        timeout: 1000
+        body: JSON.stringify(parseMessage(message)),
+        timeout: 2000
       }
     );
 
@@ -92,7 +93,6 @@ export const handle: Handler = async (event: SNSEvent, context: Context) => {
 
   for (let i = 0; i < value.Records.length; i++) {
     const { EventSubscriptionArn, Sns: { Message } } = value.Records[ i ];
-
 
     try {
       await sendLogNotification(crud, EventSubscriptionArn, Message);
