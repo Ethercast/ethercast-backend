@@ -1,5 +1,5 @@
 import toLogMessageAttributes from '../src/util/to-log-message-attributes';
-import { LogFilterType, TransactionFilterType } from '../src/util/models';
+import { LogFilterType, TransactionFilterType } from '@ethercast/backend-model';
 import { Log, Transaction } from '@ethercast/model';
 import { expect } from 'chai';
 import toTxMessageAttributes from '../src/util/to-tx-message-attributes';

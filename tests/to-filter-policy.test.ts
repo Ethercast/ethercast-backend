@@ -1,4 +1,4 @@
-import { LogFilterType } from '../src/util/models';
+import { LogFilterType } from '@ethercast/backend-model';
 import { expect } from 'chai';
 import toFilterPolicy from '../src/util/to-filter-policy';
 

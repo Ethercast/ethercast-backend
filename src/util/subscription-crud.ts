@@ -10,6 +10,7 @@ import {
 import * as Logger from 'bunyan';
 import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import uuid = require('uuid');
+import generateSecret from './generate-secret';
 
 const SUBSCRIPTIONS_USER_INDEX = 'ByUser';
 const SUBSCRIPTIONS_ARN_INDEX = 'BySubscriptionArn';
@@ -30,6 +31,7 @@ export default class SubscriptionCrud {
     const { error, value: toSave } = JoiSubscription.validate({
       id: uuid.v4(),
       ...subscription,
+      secret: generateSecret(),
       timestamp: (new Date()).getTime(),
       status: SubscriptionStatus.active
     });
