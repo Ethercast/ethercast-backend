@@ -1,6 +1,6 @@
 import 'source-map-support/register';
 import {
-  JoiSubscriptionPostRequest,
+  JoiCreateSubscriptionRequest,
   LogSubscription,
   Subscription,
   SubscriptionPostRequest,
@@ -41,7 +41,7 @@ const TOPIC_NAME_MAP = {
 export const handle = createApiGatewayHandler(
   async ({ user, parsedBody }) => {
     // validate the request
-    const { error, value } = JoiSubscriptionPostRequest.validate(parsedBody);
+    const { error, value } = JoiCreateSubscriptionRequest.validate(parsedBody);
 
     if (error || !value) {
       return {
