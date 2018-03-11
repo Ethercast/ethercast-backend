@@ -8,7 +8,7 @@ import QueueDrainer from '@ethercast/queue-drainer';
 import * as SQS from 'aws-sdk/clients/sqs';
 import * as SNS from 'aws-sdk/clients/sns';
 import * as Lambda from 'aws-sdk/clients/lambda';
-import base64ToJson from '../util/base64-to-json';
+import { parseMessage } from '../util/message-compressor';
 
 const sqs = new SQS();
 const sns = new SNS();
@@ -32,7 +32,7 @@ export const handle: Handler = async (event, context) => {
 
     let log: Log;
     try {
-      log = mustBeValidLog(JSON.parse(base64ToJson(message.Body)));
+      log = mustBeValidLog(parseMessage(message.Body));
     } catch (err) {
       logger.error({ err }, 'invalid log received');
       throw new Error(`log failed validation`);
