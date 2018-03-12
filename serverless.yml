@@ -115,6 +115,7 @@ functions:
     events:
       - sns:
           arn: "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.blockProcessedTopicName}"
+          topicName: ${self:custom.blockProcessedTopicName}
 
   drain-tx-firehose-queue:
     handler: src/pipe/drain-tx-firehose-queue.handle
@@ -123,6 +124,7 @@ functions:
     events:
       - sns:
           arn: "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.blockProcessedTopicName}"
+          topicName: ${self:custom.blockProcessedTopicName}
 
   send-webhook-request:
     handler: src/pipe/send-webhook-request.handle
