@@ -9,12 +9,23 @@ import * as SNS from 'aws-sdk/clients/sns';
 import SnsSubscriptionUtil from '../util/sns-subscription-util';
 import * as Lambda from 'aws-sdk/clients/lambda';
 import { parseMessage } from '@ethercast/message-compressor';
+import { calculateMessageSignature, SignatureVersion } from '@ethercast/calculate-signature';
 
 const client = new DynamoDB.DocumentClient();
 const sns = new SNS();
 const lambda = new Lambda();
 const subscriptionUtil = new SnsSubscriptionUtil({ logger, sns, lambda });
 const crud = new SubscriptionCrud({ client, logger, subscriptionUtil });
+
+function calculateSignatures(messageBody: string, subscriptionSecret: string): string {
+  return Object.keys(SignatureVersion)
+    .map(
+      (version) => {
+        `${version}=${calculateMessageSignature(messageBody, subscriptionSecret, version as SignatureVersion)}`;
+      }
+    )
+    .join('; ');
+}
 
 async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription, message: string): Promise<WebhookReceiptResult> {
   // we create this here to correlate logs from sending the webhook with the receipt we store in dynamo
@@ -29,7 +40,7 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
           'user-agent': 'ethercast',
           'x-ethercast-subscription-id': subscription.id,
           'content-type': 'application/json',
-          'x-ethercast-signature': `v0=${calculateSignature(subscription.secret, message)}`
+          'x-ethercast-signature': calculateSignatures(message, subscription.secret)
         },
         body: message,
         timeout: 2000
