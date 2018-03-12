@@ -110,6 +110,7 @@ provider:
 functions:
   drain-log-firehose-queue:
     handler: src/pipe/drain-log-firehose-queue.handle
+    memorySize: 256
     reservedConcurrency: 1
     timeout: 60
     events:
@@ -119,6 +120,7 @@ functions:
 
   drain-tx-firehose-queue:
     handler: src/pipe/drain-tx-firehose-queue.handle
+    memorySize: 256
     reservedConcurrency: 1
     timeout: 60
     events:
