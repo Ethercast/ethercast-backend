@@ -15,6 +15,7 @@ custom:
   logNotificationTopicName: ${self:custom.prefix}-logs-topic
   txNotificationTopicName: ${self:custom.prefix}-txs-topic
   sendWebhookLambdaName: ${self:custom.prefix}-send-webhook-lambda
+  blockProcessedTopicName: "serverless-blockstream-${self:custom.stage}-block-processed"
   logQueueName: "serverless-blockstream-${self:custom.stage}-log-firehose.fifo"
   txQueueName: "serverless-blockstream-${self:custom.stage}-tx-firehose.fifo"
   baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "1"}
@@ -112,14 +113,14 @@ functions:
     reservedConcurrency: 1
     timeout: 60
     events:
-      - schedule: rate(1 minute)
+      - sns: ${self:custom.blockProcessedTopicName}
 
   drain-tx-firehose-queue:
     handler: src/pipe/drain-tx-firehose-queue.handle
     reservedConcurrency: 1
     timeout: 60
     events:
-      - schedule: rate(1 minute)
+      - sns: ${self:custom.blockProcessedTopicName}
 
   send-webhook-request:
     handler: src/pipe/send-webhook-request.handle

@@ -41,7 +41,7 @@
     "@ethercast/backend-model": "0.0.7",
     "@ethercast/calculate-signature": "0.0.1",
     "@ethercast/message-compressor": "0.0.0",
-    "@ethercast/model": "0.0.13",
+    "@ethercast/model": "0.0.14",
     "@ethercast/queue-drainer": "0.0.5",
     "bignumber.js": "^6.0.0",
     "bunyan": "^1.8.12",
