@@ -113,14 +113,16 @@ functions:
     reservedConcurrency: 1
     timeout: 60
     events:
-      - sns: ${self:custom.blockProcessedTopicName}
+      - sns:
+          arn: "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.blockProcessedTopicName}"
 
   drain-tx-firehose-queue:
     handler: src/pipe/drain-tx-firehose-queue.handle
     reservedConcurrency: 1
     timeout: 60
     events:
-      - sns: ${self:custom.blockProcessedTopicName}
+      - sns:
+          arn: "arn:aws:sns:#{AWS::Region}:#{AWS::AccountId}:${self:custom.blockProcessedTopicName}"
 
   send-webhook-request:
     handler: src/pipe/send-webhook-request.handle
