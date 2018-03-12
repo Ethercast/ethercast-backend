@@ -20,9 +20,8 @@ const crud = new SubscriptionCrud({ client, logger, subscriptionUtil });
 function calculateSignatures(messageBody: string, subscriptionSecret: string): string {
   return Object.keys(SignatureVersion)
     .map(
-      (version) => {
-        `${version}=${calculateMessageSignature(messageBody, subscriptionSecret, version as SignatureVersion)}`;
-      }
+      (version) =>
+        `${version}=${calculateMessageSignature(messageBody, subscriptionSecret, version as SignatureVersion)}`
     )
     .join('; ');
 }
