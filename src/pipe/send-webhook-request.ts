@@ -28,7 +28,8 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
         headers: {
           'user-agent': 'ethercast',
           'x-ethercast-subscription-id': subscription.id,
-          'content-type': 'application/json'
+          'content-type': 'application/json',
+          'x-ethercast-signature': `v0=${calculateSignature(subscription.secret, message)}`
         },
         body: message,
         timeout: 2000
