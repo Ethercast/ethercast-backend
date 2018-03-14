@@ -18,9 +18,9 @@ custom:
   blockProcessedTopicName: "serverless-blockstream-${self:custom.stage}-block-processed"
   logQueueName: "serverless-blockstream-${self:custom.stage}-log-firehose.fifo"
   txQueueName: "serverless-blockstream-${self:custom.stage}-tx-firehose.fifo"
-  baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "5"}
+  baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "2"}
   maxDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "100"}
-  dynamoTargetUtilitzation: ${opt:dynamoTargetUtilitzation, env:dynamoTargetUtilitzation, "0.7"}
+  dynamoTargetUtilitzation: ${opt:dynamoTargetUtilitzation, env:dynamoTargetUtilitzation, "0.6"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
   logLevel: ${opt:logLevel, "info"}
   capacities:
@@ -145,6 +145,27 @@ functions:
       - http:
           method: get
           path: subscriptions
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
+  get-example-log:
+    handler: src/crud/get-example-log.handle
+    events:
+      - http:
+          method: post
+          path: get-example-log
           authorizer:
             name: auth
             resultTtlInSeconds: 300
