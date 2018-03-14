@@ -160,27 +160,6 @@ functions:
               - X-Amz-User-Agent
             allowCredentials: true
 
-  get-example-log:
-    handler: src/crud/get-example-log.handle
-    events:
-      - http:
-          method: post
-          path: get-example-log
-          authorizer:
-            name: auth
-            resultTtlInSeconds: 300
-            type: token
-          cors:
-            origin: '*'
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
-              - X-Amz-User-Agent
-            allowCredentials: true
-
   list-receipts:
     handler: src/crud/list-receipts.handle
     events:
