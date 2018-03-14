@@ -39,7 +39,7 @@ const getJwts = (function () {
         cachedJwts = fetch(`${issuer}.well-known/jwks.json`)
           .then(
             response => {
-              if (response.status === 200) {
+              if (response.status !== 200) {
                 throw new Error('failed to get jwts');
               }
 
