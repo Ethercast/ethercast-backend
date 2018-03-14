@@ -1,5 +1,7 @@
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import logger from './logger';
+import _ = require('underscore');
+import { Scope } from '@ethercast/backend-model';
 
 export interface Response {
   statusCode: number;
@@ -18,6 +20,7 @@ export function simpleError(statusCode: number, message: string): Response {
   };
 }
 
+export const FORBIDDEN = simpleError(403, 'Unauthorized');
 export const UNAUTHENTICATED = simpleError(401, 'Unauthorized');
 export const BAD_REQUEST = simpleError(400, 'The request format was bad.');
 
@@ -53,10 +56,11 @@ function processResponse(response: Response) {
 /**
  * This function takes care of the common functions that a handle checks and passes an easier-to-use event
  * to the child
+ * @param requiredScopes array of scopes that are required for this endpoint
  * @param {WrappedHandler} handler
  * @returns {Handler}
  */
-export default function createApiGatewayHandler(handler: WrappedHandler): Handler {
+export default function createApiGatewayHandler(requiredScopes: Scope[], handler: WrappedHandler): Handler {
   return async function apiGatewayRequestHandler(event: APIGatewayEvent, context: Context, callback?: Callback): Promise<void> {
     function respond(response: Response) {
       if (!callback) {
@@ -65,21 +69,41 @@ export default function createApiGatewayHandler(handler: WrappedHandler): Handle
       callback(null, processResponse(response));
     }
 
-    let response: Response;
-
     const { requestContext: { authorizer } } = event;
+
     if (!authorizer || !authorizer.user) {
       logger.error({ authorizer }, 'Unauthenticated request');
       respond(UNAUTHENTICATED);
       return;
     }
 
-    const { user } = authorizer;
+    const { user, scope } = authorizer;
 
     if (typeof user !== 'string') {
       logger.error({ authorizer }, 'Missing user on authorizer');
       respond(UNAUTHENTICATED);
       return;
+    }
+
+    if (typeof scope !== 'string') {
+      logger.error({ authorizer }, 'missing scopes');
+      respond(FORBIDDEN);
+      return;
+    }
+
+    if (requiredScopes.length > 0) {
+      const authorizedScopes = scope.split(' ');
+
+      const missingScopes = _.filter(requiredScopes, s => authorizedScopes.indexOf(s) === -1);
+
+      if (missingScopes.length > 0) {
+        respond(
+          simpleError(
+            403,
+            `The following scopes were missing from the access token: ${missingScopes.join('; ')}`
+          )
+        );
+      }
     }
 
     let parsedBody: object | null;

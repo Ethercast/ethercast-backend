@@ -8,12 +8,12 @@ const issuer = TOKEN_ISSUER;
 const audience = 'https://api.ethercast.io';
 
 // Generate policy to allow this user to invoke this API. Scope checking happens in the handler
-const generatePolicy = (principalId: string, scopes: string[]) => {
+const generatePolicy = (principalId: string, scope: string) => {
   return {
     principalId,
     context: {
       user: principalId,
-      scopes
+      scope
     },
     policyDocument: {
       Version: '2012-10-17',
@@ -61,8 +61,8 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
   }
 
   // call when the user is authenticated
-  function authorized(user: string, scopes: string[]) {
-    cb(null, generatePolicy(user, scopes));
+  function authorized(user: string, scope: string) {
+    cb(null, generatePolicy(user, scope));
   }
 
 
@@ -94,7 +94,7 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
             const { sub, scope } = decodedJwt as any;
 
             logger.info({ sub, scope }, `Authorized user`);
-            authorized(sub, scope.split(' '));
+            authorized(sub, scope);
           }
         }
       );

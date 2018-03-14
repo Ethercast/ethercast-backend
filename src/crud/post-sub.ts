@@ -1,7 +1,8 @@
 import {
   CreateLogSubscriptionRequest,
   CreateTransactionSubscriptionRequest,
-  JoiCreateSubscriptionRequest
+  JoiCreateSubscriptionRequest,
+  Scope
 } from '@ethercast/backend-model';
 import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway-handler';
 import getFilterCombinations from '../util/get-filter-combinations';
@@ -28,6 +29,7 @@ const subscriptionUtil = new SnsSubscriptionUtil({ logger, lambda, sns });
 const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger, subscriptionUtil });
 
 export const handle = createApiGatewayHandler(
+  [ Scope.CREATE_SUBSCRIPTION ],
   async ({ user, parsedBody }) => {
     // validate the request
     const { error, value } = JoiCreateSubscriptionRequest.validate(parsedBody);

@@ -5,12 +5,14 @@ import * as SNS from 'aws-sdk/clients/sns';
 import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import * as Lambda from 'aws-sdk/clients/lambda';
 import SnsSubscriptionUtil from '../util/sns-subscription-util';
+import { Scope } from '@ethercast/backend-model';
 
 const sns = new SNS();
 const subscriptionUtil = new SnsSubscriptionUtil({ logger, sns, lambda: new Lambda() });
 const crud = new SubscriptionCrud({ client: new DynamoDB.DocumentClient(), logger, subscriptionUtil });
 
 export const handle = createApiGatewayHandler(
+  [ Scope.DEACTIVATE_SUBSCRIPTION ],
   async ({ pathParameters: { id }, user }) => {
     const subscription = await crud.get(id);
 
