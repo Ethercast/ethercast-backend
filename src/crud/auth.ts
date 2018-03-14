@@ -96,10 +96,10 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
               logger.info({ err }, 'Unauthorized user');
               unauthorized();
             } else {
-              const { sub, scopes } = decodedJwt as any;
+              const { sub, scope } = decodedJwt as any;
 
-              logger.info({ sub, scopes }, `Authorized user`);
-              authorized(sub, scopes);
+              logger.info({ sub, scope }, `Authorized user`);
+              authorized(sub, scope.split(' '));
             }
           }
         );
