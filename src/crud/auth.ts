@@ -28,7 +28,7 @@ const generatePolicy = (principalId: string, scopes: string[]) => {
   };
 };
 
-const getJwts = (function () {
+const getJwks = (function () {
   let cachedJwts: Promise<any>;
 
   return function (): Promise<any> {
@@ -72,38 +72,32 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
 
     try {
       // Make a request to the iss + .well-known/jwks.json URL:
-      const response = await getJwts();
+      const jwts = await getJwks();
 
-      if (response.status !== 200) {
-        unauthorized();
-      } else {
-        const body = await response.json();
+      const k = jwts.keys[ 0 ];
+      const { kty, n, e } = k;
 
-        const k = body.keys[ 0 ];
-        const { kty, n, e } = k;
+      const jwkArray = { kty, n, e };
 
-        const jwkArray = { kty, n, e };
+      const pem = jwkToPem(jwkArray);
 
-        const pem = jwkToPem(jwkArray);
+      // Verify the token:
+      jwk.verify(
+        token,
+        pem,
+        { issuer, audience },
+        (err, decodedJwt) => {
+          if (err) {
+            logger.info({ err }, 'Unauthorized user');
+            unauthorized();
+          } else {
+            const { sub, scope } = decodedJwt as any;
 
-        // Verify the token:
-        jwk.verify(
-          token,
-          pem,
-          { issuer, audience },
-          (err, decodedJwt) => {
-            if (err) {
-              logger.info({ err }, 'Unauthorized user');
-              unauthorized();
-            } else {
-              const { sub, scope } = decodedJwt as any;
-
-              logger.info({ sub, scope }, `Authorized user`);
-              authorized(sub, scope.split(' '));
-            }
+            logger.info({ sub, scope }, `Authorized user`);
+            authorized(sub, scope.split(' '));
           }
-        );
-      }
+        }
+      );
     } catch (err) {
       logger.error({ err }, 'failed to authorize user');
       unauthorized();
