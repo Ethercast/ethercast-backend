@@ -6,6 +6,7 @@
     "noImplicitThis": true,
     "allowSyntheticDefaultImports": false,
     "sourceMap": true,
+    "target": "es5",
     "lib": [
       "es5",
       "es6",
