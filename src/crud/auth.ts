@@ -9,13 +9,16 @@ const audience = 'https://api.ethercast.io';
 
 // Generate policy to allow this user to invoke this API. Scope and user checking happens in the handler so that
 // CORS headers are always sent
-const generatePolicy = (principalId: string | null, scope: string | null) => {
+const generatePolicy = (result: { user: string; scope: string; } | null) => {
+
   return {
-    principalId: principalId !== null ? principalId : 'NOT_AUTHORIZED',
-    context: {
-      user: principalId === null ? false : principalId,
-      scope: scope === null ? false : scope
-    },
+    ...(result ? {
+      principalId: result.user,
+      context: {
+        user: result.user,
+        scope: result.scope
+      }
+    } : null),
     policyDocument: {
       Version: '2012-10-17',
       Statement: [
@@ -58,12 +61,12 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
 
   // call when the user is not authenticated
   function unauthorized() {
-    cb(null, generatePolicy(null, null));
+    cb(null, generatePolicy(null));
   }
 
   // call when the user is authenticated
   function authorized(user: string, scope: string) {
-    cb(null, generatePolicy(user, scope));
+    cb(null, generatePolicy({ user, scope }));
   }
 
 

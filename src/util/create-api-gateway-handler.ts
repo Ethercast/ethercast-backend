@@ -20,7 +20,6 @@ export function simpleError(statusCode: number, message: string): Response {
   };
 }
 
-export const FORBIDDEN = simpleError(403, 'Unauthorized');
 export const UNAUTHENTICATED = simpleError(401, 'Unauthorized');
 export const BAD_REQUEST = simpleError(400, 'The request format was bad.');
 
