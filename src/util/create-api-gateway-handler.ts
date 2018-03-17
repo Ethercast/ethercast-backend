@@ -1,7 +1,7 @@
+import { Scope } from '@ethercast/backend-model';
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import logger from './logger';
 import _ = require('underscore');
-import { Scope } from '@ethercast/backend-model';
 
 export interface Response {
   statusCode: number;
@@ -71,8 +71,8 @@ export default function createApiGatewayHandler(requiredScopes: Scope[], handler
 
     const { requestContext: { authorizer } } = event;
 
+    // this isn't an error case because it is false in the case of a bad token or unauthorized request
     if (!authorizer || !authorizer.user) {
-      logger.error({ authorizer }, 'Unauthenticated request');
       respond(UNAUTHENTICATED);
       return;
     }
@@ -80,19 +80,13 @@ export default function createApiGatewayHandler(requiredScopes: Scope[], handler
     const { user, scope } = authorizer;
 
     if (typeof user !== 'string') {
-      logger.error({ authorizer }, 'Missing user on authorizer');
+      logger.error({ authorizer }, 'user key on authorizer was not string');
       respond(UNAUTHENTICATED);
       return;
     }
 
-    if (typeof scope !== 'string') {
-      logger.error({ authorizer }, 'missing scopes');
-      respond(FORBIDDEN);
-      return;
-    }
-
     if (requiredScopes.length > 0) {
-      const authorizedScopes = scope.split(' ');
+      const authorizedScopes = typeof scope === 'string' ? scope.split(' ') : [];
 
       const missingScopes = _.filter(requiredScopes, s => authorizedScopes.indexOf(s) === -1);
 
