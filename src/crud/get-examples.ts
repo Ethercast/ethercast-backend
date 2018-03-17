@@ -139,6 +139,7 @@ export const handle = createApiGatewayHandler(
           return { statusCode: 200, body: EMPTY_LOG };
         } else {
           const abis = await getAbis(addresses);
+
           return { statusCode: 200, body: EMPTY_LOG };
         }
       }
