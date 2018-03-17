@@ -18,6 +18,7 @@ custom:
   blockProcessedTopicName: "serverless-blockstream-${self:custom.stage}-block-processed"
   logQueueName: "serverless-blockstream-${self:custom.stage}-log-firehose.fifo"
   txQueueName: "serverless-blockstream-${self:custom.stage}-tx-firehose.fifo"
+  getAbisLambdaName: "serverless-blockstream-${self:custom.stage}-get-abis"
   baseDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "2"}
   maxDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "100"}
   dynamoTargetUtilitzation: ${opt:dynamoTargetUtilitzation, env:dynamoTargetUtilitzation, "0.6"}
@@ -63,6 +64,7 @@ provider:
     SEND_WEBHOOK_LAMBDA_NAME: ${self:custom.sendWebhookLambdaName}
     LOG_QUEUE_NAME: ${self:custom.logQueueName}
     TX_QUEUE_NAME: ${self:custom.txQueueName}
+    GET_ABIS_LAMBDA_NAME: ${self:custom.getAbisLambdaName}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -98,6 +100,11 @@ provider:
         - lambda:AddPermission
       Resource:
         - "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:custom.sendWebhookLambdaName}"
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:custom.getAbisLambdaName}"
     - Effect: Allow
       Action:
         - sqs:GetQueueUrl
@@ -229,6 +236,27 @@ functions:
       - http:
           method: delete
           path: subscriptions/{id}
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
+  get-examples:
+    handler: src/crud/get-examples.handle
+    events:
+      - http:
+          method: post
+          path: get-examples
           authorizer:
             name: auth
             resultTtlInSeconds: 300
