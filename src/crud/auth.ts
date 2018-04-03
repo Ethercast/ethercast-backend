@@ -1,9 +1,10 @@
-import * as jwk from 'jsonwebtoken';
+import * as jwt from 'jsonwebtoken';
 import * as jwkToPem from 'jwk-to-pem';
 import fetch from 'node-fetch';
 import {
   TOKEN_ISSUER,
-  TOKEN_AUDIENCE
+  TOKEN_AUDIENCE,
+  TOKEN_SECRET
 } from '../util/env';
 import logger from '../util/logger';
 
@@ -72,39 +73,42 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
     cb(null, generatePolicy({ user, scope }));
   }
 
+  function jwtCb(err: Error, decodedJwt: any) {
+    if (err) {
+      logger.info({ err }, 'Unauthorized user');
+      unauthorized();
+    } else {
+      const { sub, scope, tenant } = decodedJwt;
+      logger.info({ sub, scope, tenant }, 'Authorized user');
+      authorized(sub || tenant, scope);
+    }
+  }
 
   if (event.authorizationToken) {
     // Remove 'bearer ' from token:
     const token = event.authorizationToken.substring(7);
 
     try {
-      // Make a request to the iss + .well-known/jwks.json URL:
-      const jwts = await getJwks();
+      const { iss } = jwt.decode(token) as any;
 
-      const k = jwts.keys[ 0 ];
-      const { kty, n, e } = k;
+      if (iss === TOKEN_AUDIENCE) {
+        jwt.verify(token, TOKEN_SECRET, jwtCb);
+      }
 
-      const jwkArray = { kty, n, e };
+      if (iss === TOKEN_ISSUER) {
+        // Make a request to the iss + .well-known/jwks.json URL:
+        const jwts = await getJwks();
 
-      const pem = jwkToPem(jwkArray);
+        const k = jwts.keys[ 0 ];
+        const { kty, n, e } = k;
 
-      // Verify the token:
-      jwk.verify(
-        token,
-        pem,
-        { issuer, audience },
-        (err, decodedJwt) => {
-          if (err) {
-            logger.info({ err }, 'Unauthorized user');
-            unauthorized();
-          } else {
-            const { sub, scope } = decodedJwt as any;
+        const jwkArray = { kty, n, e };
 
-            logger.info({ sub, scope }, `Authorized user`);
-            authorized(sub, scope);
-          }
-        }
-      );
+        const pem = jwkToPem(jwkArray);
+
+        // Verify the token:
+        jwt.verify(token, pem, { issuer, audience }, jwtCb);
+      }
     } catch (err) {
       logger.error({ err }, 'failed to authorize user');
       unauthorized();
