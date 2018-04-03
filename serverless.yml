@@ -24,8 +24,8 @@ custom:
   maxDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "100"}
   dynamoTargetUtilitzation: ${opt:dynamoTargetUtilitzation, env:dynamoTargetUtilitzation, "0.6"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
-  tokenAudience: ${opt: tokenAudience, "https://api.ethercast.io"}
-  tokenSecret: ${opt: tokenSecret}
+  tokenAudience: ${opt:tokenAudience, "https://api.ethercast.io"}
+  tokenSecret: ${opt:tokenSecret}
   logLevel: ${opt:logLevel, "info"}
   capacities:
     - table: SubscriptionsTable  # DynamoDB Resource

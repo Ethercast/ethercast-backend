@@ -13,19 +13,12 @@ import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import * as jwt from 'jsonwebtoken';
 import uuid = require('uuid');
 
-const SUBSCRIPTIONS_USER_INDEX = 'ByUser';
-const SUBSCRIPTIONS_ARN_INDEX = 'BySubscriptionArn';
-const WEBHOOK_RECEIPTS_SUBSCRIPTION_ID_INDEX = 'BySubscriptionId';
+const API_KEYS_USER_INDEX = 'ByUser';
 
 interface ApiKeyCrudConstructorOptions {
   client: DynamoDB.DocumentClient;
   logger: Logger;
 }
-
-const TOPIC_NAME_MAP = {
-  [ SubscriptionType.log ]: LOG_NOTIFICATION_TOPIC_NAME,
-  [ SubscriptionType.transaction ]: TX_NOTIFICATION_TOPIC_NAME
-};
 
 export default class ApiKeyCrud {
   private client: DynamoDB.DocumentClient;
@@ -36,7 +29,7 @@ export default class ApiKeyCrud {
     this.logger = logger;
   }
 
-  async create(validatedRequest: CreateApiKeyRequest, user: string): Promise<Subscription> {
+  async create(validatedRequest: CreateApiKeyRequest, user: string): Promise<ApiKey> {
     this.logger.info({ validatedRequest, user }, 'creating api key');
 
     const { name, scopes } = validatedRequest;
@@ -44,25 +37,21 @@ export default class ApiKeyCrud {
     const aud = TOKEN_AUDIENCE;
     const iss = TOKEN_AUDIENCE;
     const tenant = user;
-    const scopesList = scopes.join(' ');
+    const scopesList = Array.from(scopes).join(' ');
 
-    try {
-      const token = jwt.sign({ jit, name, aud, iss, tenant, scopes: scopesList }, TOKEN_SECRET);
-    } catch (err) {
-      return Promise.reject(err);
-    }
+    const token = jwt.sign({ jit, name, aud, iss, tenant, scopes: scopesList }, TOKEN_SECRET);
 
-    await this.client.put({
+    const saved: ApiKey = await this.client.put({
       TableName: API_KEYS_TABLE,
       Item: { jit, name, user, token, scopes, status: ApiKeyStatus.active }
-    }).promise();
+    }).promise() as any;
 
-    this.logger.info({ saved: apiKey }, 'api key created');
+    this.logger.info({ saved }, 'api key created');
 
-    return apiKey;
+    return saved;
   }
 
-  async get(id: string, user: string): Promise<ApiKey> {
+  async get(id: string, user: string): Promise<ApiKey|null> {
     this.logger.info({ id, user }, 'getting api key');
 
     const { Item } = await this.client.get({
@@ -82,7 +71,7 @@ export default class ApiKeyCrud {
     this.logger.info({ id }, 'deactivating api key');
 
     await this.client.update({
-      TableName: API_KEYSS_TABLE,
+      TableName: API_KEYS_TABLE,
       Key: { id },
       UpdateExpression: 'set #status = :status',
       ExpressionAttributeNames: {
