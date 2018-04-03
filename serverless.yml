@@ -165,6 +165,69 @@ functions:
   auth:
     handler: src/crud/auth.authorize
 
+  list-keys:
+    handler: src/crud/list-keys.handle
+    events:
+      - http:
+          method: get
+          path: api-keys
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
+  post-key:
+    handler: src/crud/post-key.handle
+    events:
+      - http:
+          method: post
+          path: api-keys
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
+  delete-key:
+    handler: src/crud/delete-key.handle
+    events:
+      - http:
+          method: delete
+          path: api-keys/{id}
+          authorizer:
+            name: auth
+            resultTtlInSeconds: 300
+            type: token
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+            allowCredentials: true
+
   list-subs:
     handler: src/crud/list-subs.handle
     events:
