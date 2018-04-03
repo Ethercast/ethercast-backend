@@ -97,9 +97,9 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
       const { iss } = jwt.decode(token) as any;
 
       if (iss === TOKEN_AUDIENCE) {
-        jwt.verify(token, TOKEN_SECRET, jwtCb(async ({ jit, tenant, scope }) => {
+        jwt.verify(token, TOKEN_SECRET, jwtCb(async ({ jti, tenant, scope }) => {
           logger.info({ tenant, scope }, 'Authorized tenant');
-          const key = await crud.get(jit);
+          const key = await crud.get(jti);
           if (!key || key.status !== ApiKeyStatus.active) {
             logger.info({ err: 'Inactive api key' }, 'Unauthorized tenant');
             unauthorized();

@@ -20,7 +20,7 @@ export const handle = createApiGatewayHandler(
 
     logger.info({ key }, 'unsubscribed api key');
 
-    const saved = await crud.deactivate(key.jit);
+    const saved = await crud.deactivate(key.id);
 
     logger.info({ key }, `deactivated api key `);
 

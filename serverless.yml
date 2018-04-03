@@ -439,12 +439,12 @@ resources:
       Properties:
         TableName: ${self:custom.apiKeysTable}
         AttributeDefinitions:
-          - AttributeName: jit
+          - AttributeName: id
             AttributeType: S
           - AttributeName: user
             AttributeType: S
         KeySchema:
-          - AttributeName: jit
+          - AttributeName: id
             KeyType: HASH
         ProvisionedThroughput:
           ReadCapacityUnits: ${self:custom.baseDynamoDDBCapacity}

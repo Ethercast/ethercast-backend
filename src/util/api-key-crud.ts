@@ -33,17 +33,17 @@ export default class ApiKeyCrud {
     this.logger.info({ validatedRequest, user }, 'creating api key');
 
     const { name, scopes } = validatedRequest;
-    const jit = uuid.v4();
+    const jti = uuid.v4();
     const aud = TOKEN_AUDIENCE;
     const iss = TOKEN_AUDIENCE;
     const tenant = user;
     const scopesList = Array.from(scopes).join(' ');
 
-    const token = jwt.sign({ jit, name, aud, iss, tenant, scopes: scopesList }, TOKEN_SECRET);
+    const token = jwt.sign({ jti, name, aud, iss, tenant, scopes: scopesList }, TOKEN_SECRET);
 
     const saved: ApiKey = await this.client.put({
       TableName: API_KEYS_TABLE,
-      Item: { jit, name, user, token, scopes, status: ApiKeyStatus.active }
+      Item: { id: jti, name, user, token, scopes, status: ApiKeyStatus.active }
     }).promise() as any;
 
     this.logger.info({ saved }, 'api key created');
@@ -51,24 +51,24 @@ export default class ApiKeyCrud {
     return saved;
   }
 
-  async get(jit: string): Promise<ApiKey|null> {
-    this.logger.info({ jit }, 'getting api key');
+  async get(id: string): Promise<ApiKey|null> {
+    this.logger.info({ id }, 'getting api key');
 
     const { Item } = await this.client.get({
       TableName: API_KEYS_TABLE,
-      Key: { jit },
+      Key: { id },
       ConsistentRead: true
     }).promise();
 
     return Item as ApiKey;
   }
 
-  async deactivate(jit: string): Promise<void> {
-    this.logger.info({ jit }, 'deactivating api key');
+  async deactivate(id: string): Promise<void> {
+    this.logger.info({ id }, 'deactivating api key');
 
     await this.client.update({
       TableName: API_KEYS_TABLE,
-      Key: { jit },
+      Key: { id },
       UpdateExpression: 'set #status = :status',
       ExpressionAttributeNames: {
         '#status': 'status'
