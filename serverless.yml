@@ -100,7 +100,7 @@ provider:
         - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}"
         - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}/index/BySubscriptionId"
         - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.apiKeysTable}"
-        - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.apiKeysTable}/index/byUser"
+        - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.apiKeysTable}/index/ByUser"
     - Effect: Allow
       Action:
         - sns:Subscribe
