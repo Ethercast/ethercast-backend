@@ -12,6 +12,7 @@ custom:
   prefix: ${self:service}-${self:custom.stage}
   subscriptionsTable: ${self:custom.prefix}-subscriptions
   receiptsTable: ${self:custom.prefix}-receipts
+  apiKeysTable: ${self:custom.prefix}-api-keys
   logNotificationTopicName: ${self:custom.prefix}-logs-topic
   txNotificationTopicName: ${self:custom.prefix}-txs-topic
   sendWebhookLambdaName: ${self:custom.prefix}-send-webhook-lambda
@@ -23,6 +24,8 @@ custom:
   maxDynamoDDBCapacity: ${opt:baseDynamoDDBCapacity, "100"}
   dynamoTargetUtilitzation: ${opt:dynamoTargetUtilitzation, env:dynamoTargetUtilitzation, "0.6"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
+  tokenAudience: ${opt: tokenAudience, "https://api.ethercast.io"}
+  tokenSecret: ${opt: tokenSecret}
   logLevel: ${opt:logLevel, "info"}
   capacities:
     - table: SubscriptionsTable  # DynamoDB Resource
@@ -48,6 +51,17 @@ custom:
         minimum: ${self:custom.baseDynamoDDBCapacity}        # Minimum write capacity
         maximum: ${self:custom.maxDynamoDDBCapacity}      # Maximum write capacity
         usage: ${self:custom.dynamoTargetUtilitzation}        # Targeted usage percentage
+    - table: ApiKeysReceiptsTable  # DynamoDB Resource
+      index:
+        - ByUser
+      read:
+        minimum: ${self:custom.baseDynamoDDBCapacity}        # Minimum read capacity
+        maximum: ${self:custom.maxDynamoDDBCapacity}      # Maximum read capacity
+        usage: ${self:custom.dynamoTargetUtilitzation}        # Targeted usage percentage
+      write:
+        minimum: ${self:custom.baseDynamoDDBCapacity}        # Minimum write capacity
+        maximum: ${self:custom.maxDynamoDDBCapacity}      # Maximum write capacity
+        usage: ${self:custom.dynamoTargetUtilitzation}        # Targeted usage percentage
 
 provider:
   name: aws
@@ -58,7 +72,10 @@ provider:
     LOG_LEVEL: ${self:custom.logLevel}
     SUBSCRIPTIONS_TABLE: ${self:custom.subscriptionsTable}
     WEBHOOK_RECEIPTS_TABLE: ${self:custom.receiptsTable}
+    API_KEYS_TABLE: ${self:custom.apiKeysTable}
     TOKEN_ISSUER: ${self:custom.tokenIssuer}
+    TOKEN_AUDIENCE: ${self:custom.tokenAudience}
+    TOKEN_SECRET: ${self:custom.tokenSecret}
     LOG_NOTIFICATION_TOPIC_NAME: ${self:custom.logNotificationTopicName}
     TX_NOTIFICATION_TOPIC_NAME: ${self:custom.txNotificationTopicName}
     SEND_WEBHOOK_LAMBDA_NAME: ${self:custom.sendWebhookLambdaName}
@@ -82,6 +99,8 @@ provider:
         - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.subscriptionsTable}/index/BySubscriptionArn"
         - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}"
         - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.receiptsTable}/index/BySubscriptionId"
+        - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.apiKeysTable}"
+        - "arn:aws:dynamodb:#{AWS::Region}:#{AWS::AccountId}:table/${self:custom.apiKeysTable}/index/byUser"
     - Effect: Allow
       Action:
         - sns:Subscribe
@@ -342,6 +361,36 @@ resources:
             IndexName: BySubscriptionId
             KeySchema:
               - AttributeName: subscriptionId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+              WriteCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+
+    ApiKeysReceiptsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.apiKeysTable}
+        AttributeDefinitions:
+          - AttributeName: jit
+            AttributeType: S
+          - AttributeName: user
+            AttributeType: S
+        KeySchema:
+          - AttributeName: jit
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+          WriteCapacityUnits: ${self:custom.baseDynamoDDBCapacity}
+        GlobalSecondaryIndexes:
+          -
+            IndexName: ByUser
+            KeySchema:
+              - AttributeName: user
                 KeyType: HASH
             Projection:
               ProjectionType: ALL

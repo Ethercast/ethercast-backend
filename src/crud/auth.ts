@@ -1,11 +1,14 @@
 import * as jwk from 'jsonwebtoken';
 import * as jwkToPem from 'jwk-to-pem';
 import fetch from 'node-fetch';
-import { TOKEN_ISSUER } from '../util/env';
+import {
+  TOKEN_ISSUER,
+  TOKEN_AUDIENCE
+} from '../util/env';
 import logger from '../util/logger';
 
 const issuer = TOKEN_ISSUER;
-const audience = 'https://api.ethercast.io';
+const audience = TOKEN_AUDIENCE;
 
 // Generate policy to allow this user to invoke this API. Scope and user checking happens in the handler so that
 // CORS headers are always sent
