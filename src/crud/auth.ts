@@ -1,15 +1,20 @@
+import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import * as jwt from 'jsonwebtoken';
 import * as jwkToPem from 'jwk-to-pem';
 import fetch from 'node-fetch';
+import { ApiKeyStatus } from '@ethercast/backend-model';
 import {
   TOKEN_ISSUER,
   TOKEN_AUDIENCE,
   TOKEN_SECRET
 } from '../util/env';
 import logger from '../util/logger';
+import ApiKeyCrud from '../util/api-key-crud';
 
 const issuer = TOKEN_ISSUER;
 const audience = TOKEN_AUDIENCE;
+
+const crud = new ApiKeyCrud({ client: new DynamoDB.DocumentClient(), logger });
 
 // Generate policy to allow this user to invoke this API. Scope and user checking happens in the handler so that
 // CORS headers are always sent
@@ -73,15 +78,15 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
     cb(null, generatePolicy({ user, scope }));
   }
 
-  function jwtCb(err: Error, decodedJwt: any) {
-    if (err) {
-      logger.info({ err }, 'Unauthorized user');
-      unauthorized();
-    } else {
-      const { sub, scope, tenant } = decodedJwt;
-      logger.info({ sub, scope, tenant }, 'Authorized user');
-      authorized(sub || tenant, scope);
-    }
+  function jwtCb(then: (decodedJwt: any) => void) {
+    return (err: Error, decodedJwt: any) => {
+      if (err) {
+        logger.info({ err }, 'Unauthorized user');
+        unauthorized();
+      } else {
+        then(decodedJwt);
+      }
+    };
   }
 
   if (event.authorizationToken) {
@@ -92,7 +97,17 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
       const { iss } = jwt.decode(token) as any;
 
       if (iss === TOKEN_AUDIENCE) {
-        jwt.verify(token, TOKEN_SECRET, jwtCb);
+        jwt.verify(token, TOKEN_SECRET, jwtCb(async ({ jit, tenant, scope }) => {
+          logger.info({ tenant, scope }, 'Authorized tenant');
+          const key = await crud.get(jit);
+          if (!key || key.status !== ApiKeyStatus.active) {
+            logger.info({ err: 'Inactive api key' }, 'Unauthorized tenant');
+            unauthorized();
+          } else {
+            logger.info({ tenant, scope }, 'Authorized tenant');
+            authorized(tenant, scope);
+          }
+        }));
       }
 
       if (iss === TOKEN_ISSUER) {
@@ -107,7 +122,10 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
         const pem = jwkToPem(jwkArray);
 
         // Verify the token:
-        jwt.verify(token, pem, { issuer, audience }, jwtCb);
+        jwt.verify(token, pem, { issuer, audience }, jwtCb(({ sub, scope }) => {
+          logger.info({ sub, scope }, 'Authorized user');
+          authorized(sub, scope);
+        }));
       }
     } catch (err) {
       logger.error({ err }, 'failed to authorize user');

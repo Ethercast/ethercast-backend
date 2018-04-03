@@ -9,7 +9,7 @@ const crud = new ApiKeyCrud({ client: new DynamoDB.DocumentClient(), logger });
 export const handle = createApiGatewayHandler(
   [ Scope.DEACTIVATE_API_KEY ],
   async ({ pathParameters: { id }, user }) => {
-    const key = await crud.get(id, user);
+    const key = await crud.get(id);
 
     if (!key || key.user !== user) {
       return simpleError(

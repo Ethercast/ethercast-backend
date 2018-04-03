@@ -51,28 +51,24 @@ export default class ApiKeyCrud {
     return saved;
   }
 
-  async get(id: string, user: string): Promise<ApiKey|null> {
-    this.logger.info({ id, user }, 'getting api key');
+  async get(jit: string): Promise<ApiKey|null> {
+    this.logger.info({ jit }, 'getting api key');
 
     const { Item } = await this.client.get({
       TableName: API_KEYS_TABLE,
-      Key: { id },
+      Key: { jit },
       ConsistentRead: true
     }).promise();
-
-    if (Item && Item.user !== user) {
-      return null;
-    }
 
     return Item as ApiKey;
   }
 
-  async deactivate(id: string): Promise<void> {
-    this.logger.info({ id }, 'deactivating api key');
+  async deactivate(jit: string): Promise<void> {
+    this.logger.info({ jit }, 'deactivating api key');
 
     await this.client.update({
       TableName: API_KEYS_TABLE,
-      Key: { id },
+      Key: { jit },
       UpdateExpression: 'set #status = :status',
       ExpressionAttributeNames: {
         '#status': 'status'
