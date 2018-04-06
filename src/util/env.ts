@@ -5,6 +5,7 @@ export const LOG_LEVEL: LogLevel = env.get('LOG_LEVEL').required().asString() as
 
 export const SUBSCRIPTIONS_TABLE: string = env.get('SUBSCRIPTIONS_TABLE').required().asString();
 export const WEBHOOK_RECEIPTS_TABLE: string = env.get('WEBHOOK_RECEIPTS_TABLE').required().asString();
+export const API_KEYS_TABLE: string = env.get('API_KEYS_TABLE').required().asString();
 
 export const LOG_NOTIFICATION_TOPIC_NAME: string = env.get('LOG_NOTIFICATION_TOPIC_NAME').required().asString();
 export const TX_NOTIFICATION_TOPIC_NAME: string = env.get('TX_NOTIFICATION_TOPIC_NAME').required().asString();
@@ -16,3 +17,5 @@ export const LOG_QUEUE_NAME: string = env.get('LOG_QUEUE_NAME').required().asStr
 export const TX_QUEUE_NAME: string = env.get('TX_QUEUE_NAME').required().asString();
 
 export const TOKEN_ISSUER: string = env.get('TOKEN_ISSUER').required().asUrlString();
+export const TOKEN_AUDIENCE: string = env.get('TOKEN_AUDIENCE').required().asUrlString();
+export const TOKEN_SECRET: string = env.get('TOKEN_SECRET').required().asString();
