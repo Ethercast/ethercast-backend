@@ -41,7 +41,7 @@ export default class ApiKeyCrud {
       Item: apiKey
     }).promise();
 
-    this.logger.info({ saved: Object.assign(apiKey, {secret: null}) }, 'api key created');
+    this.logger.info({ saved: {...apiKey, secret: null} }, 'api key created');
 
     return apiKey;
   }
