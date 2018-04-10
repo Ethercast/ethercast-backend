@@ -25,7 +25,6 @@ custom:
   dynamoTargetUtilitzation: ${opt:dynamoTargetUtilitzation, env:dynamoTargetUtilitzation, "0.6"}
   tokenIssuer: ${opt:tokenIssuer, "https://ethercast.auth0.com/"}
   tokenAudience: ${opt:tokenAudience, "https://api.ethercast.io"}
-  tokenSecret: ${opt:tokenSecret}
   logLevel: ${opt:logLevel, "info"}
   capacities:
     - table: SubscriptionsTable  # DynamoDB Resource
@@ -51,7 +50,7 @@ custom:
         minimum: ${self:custom.baseDynamoDDBCapacity}        # Minimum write capacity
         maximum: ${self:custom.maxDynamoDDBCapacity}      # Maximum write capacity
         usage: ${self:custom.dynamoTargetUtilitzation}        # Targeted usage percentage
-    - table: ApiKeysReceiptsTable  # DynamoDB Resource
+    - table: ApiKeysTable  # DynamoDB Resource
       index:
         - ByUser
       read:
@@ -73,15 +72,14 @@ provider:
     SUBSCRIPTIONS_TABLE: ${self:custom.subscriptionsTable}
     WEBHOOK_RECEIPTS_TABLE: ${self:custom.receiptsTable}
     API_KEYS_TABLE: ${self:custom.apiKeysTable}
-    TOKEN_ISSUER: ${self:custom.tokenIssuer}
-    TOKEN_AUDIENCE: ${self:custom.tokenAudience}
-    TOKEN_SECRET: ${self:custom.tokenSecret}
     LOG_NOTIFICATION_TOPIC_NAME: ${self:custom.logNotificationTopicName}
     TX_NOTIFICATION_TOPIC_NAME: ${self:custom.txNotificationTopicName}
     SEND_WEBHOOK_LAMBDA_NAME: ${self:custom.sendWebhookLambdaName}
     LOG_QUEUE_NAME: ${self:custom.logQueueName}
     TX_QUEUE_NAME: ${self:custom.txQueueName}
     GET_ABIS_LAMBDA_NAME: ${self:custom.getAbisLambdaName}
+    TOKEN_ISSUER: ${self:custom.tokenIssuer}
+    TOKEN_AUDIENCE: ${self:custom.tokenAudience}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -174,7 +172,7 @@ functions:
           authorizer:
             name: auth
             resultTtlInSeconds: 300
-            type: token
+            type: request
           cors:
             origin: '*'
             headers:
@@ -182,6 +180,7 @@ functions:
               - X-Amz-Date
               - Authorization
               - X-Api-Key
+              - X-Api-Secret
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
@@ -195,7 +194,7 @@ functions:
           authorizer:
             name: auth
             resultTtlInSeconds: 300
-            type: token
+            type: request
           cors:
             origin: '*'
             headers:
@@ -203,6 +202,7 @@ functions:
               - X-Amz-Date
               - Authorization
               - X-Api-Key
+              - X-Api-Secret
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
@@ -216,7 +216,7 @@ functions:
           authorizer:
             name: auth
             resultTtlInSeconds: 300
-            type: token
+            type: request
           cors:
             origin: '*'
             headers:
@@ -224,6 +224,7 @@ functions:
               - X-Amz-Date
               - Authorization
               - X-Api-Key
+              - X-Api-Secret
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
@@ -237,7 +238,7 @@ functions:
           authorizer:
             name: auth
             resultTtlInSeconds: 300
-            type: token
+            type: request
           cors:
             origin: '*'
             headers:
@@ -245,6 +246,7 @@ functions:
               - X-Amz-Date
               - Authorization
               - X-Api-Key
+              - X-Api-Secret
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
@@ -258,7 +260,7 @@ functions:
           authorizer:
             name: auth
             resultTtlInSeconds: 300
-            type: token
+            type: request
           cors:
             origin: '*'
             headers:
@@ -266,6 +268,7 @@ functions:
               - X-Amz-Date
               - Authorization
               - X-Api-Key
+              - X-Api-Secret
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
@@ -279,7 +282,7 @@ functions:
           authorizer:
             name: auth
             resultTtlInSeconds: 300
-            type: token
+            type: request
           cors:
             origin: '*'
             headers:
@@ -287,6 +290,7 @@ functions:
               - X-Amz-Date
               - Authorization
               - X-Api-Key
+              - X-Api-Secret
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
@@ -300,7 +304,7 @@ functions:
           authorizer:
             name: auth
             resultTtlInSeconds: 300
-            type: token
+            type: request
           cors:
             origin: '*'
             headers:
@@ -308,6 +312,7 @@ functions:
               - X-Amz-Date
               - Authorization
               - X-Api-Key
+              - X-Api-Secret
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
@@ -321,7 +326,7 @@ functions:
           authorizer:
             name: auth
             resultTtlInSeconds: 300
-            type: token
+            type: request
           cors:
             origin: '*'
             headers:
@@ -329,6 +334,7 @@ functions:
               - X-Amz-Date
               - Authorization
               - X-Api-Key
+              - X-Api-Secret
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
@@ -342,7 +348,7 @@ functions:
           authorizer:
             name: auth
             resultTtlInSeconds: 300
-            type: token
+            type: request
           cors:
             origin: '*'
             headers:
@@ -350,6 +356,7 @@ functions:
               - X-Amz-Date
               - Authorization
               - X-Api-Key
+              - X-Api-Secret
               - X-Amz-Security-Token
               - X-Amz-User-Agent
             allowCredentials: true
@@ -434,7 +441,7 @@ resources:
           AttributeName: ttl
           Enabled: true
 
-    ApiKeysReceiptsTable:
+    ApiKeysTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:custom.apiKeysTable}

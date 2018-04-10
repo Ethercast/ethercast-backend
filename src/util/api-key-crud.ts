@@ -1,13 +1,11 @@
 import {
   API_KEYS_TABLE,
-  TOKEN_AUDIENCE,
-  TOKEN_SECRET,
 } from './env';
 import {
   CreateApiKeyRequest,
   ApiKey,
-  ApiKeyStatus,
 } from '@ethercast/backend-model';
+import generateSecret from './generate-secret';
 import * as Logger from 'bunyan';
 import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import * as jwt from 'jsonwebtoken';
@@ -33,22 +31,19 @@ export default class ApiKeyCrud {
     this.logger.info({ validatedRequest, user }, 'creating api key');
 
     const { name, scopes } = validatedRequest;
-    const jti = uuid.v4();
-    const aud = TOKEN_AUDIENCE;
-    const iss = TOKEN_AUDIENCE;
-    const tenant = user;
-    const scopesList = Array.from(scopes).join(' ');
+    const id = uuid.v4();
+    const secret = await generateSecret(64);
 
-    const token = jwt.sign({ jti, name, aud, iss, tenant, scopes: scopesList }, TOKEN_SECRET);
+    const apiKey: ApiKey = { id, secret, name, scopes, user };
 
-    const saved: ApiKey = await this.client.put({
+    await this.client.put({
       TableName: API_KEYS_TABLE,
-      Item: { id: jti, name, user, token, scopes, status: ApiKeyStatus.active }
-    }).promise() as any;
+      Item: apiKey
+    }).promise();
 
-    this.logger.info({ saved }, 'api key created');
+    this.logger.info({ saved: {...apiKey, secret: null} }, 'api key created');
 
-    return saved;
+    return apiKey;
   }
 
   async get(id: string): Promise<ApiKey|null> {
@@ -63,19 +58,12 @@ export default class ApiKeyCrud {
     return Item as ApiKey;
   }
 
-  async deactivate(id: string): Promise<void> {
-    this.logger.info({ id }, 'deactivating api key');
+  async delete(id: string): Promise<void> {
+    this.logger.info({ id }, 'deleting api key');
 
-    await this.client.update({
+    await this.client.delete({
       TableName: API_KEYS_TABLE,
-      Key: { id },
-      UpdateExpression: 'set #status = :status',
-      ExpressionAttributeNames: {
-        '#status': 'status'
-      },
-      ExpressionAttributeValues: {
-        ':status': ApiKeyStatus.deactivated
-      }
+      Key: { id }
     }).promise();
   }
 

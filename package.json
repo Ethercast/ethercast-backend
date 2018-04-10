@@ -38,7 +38,7 @@
     "webpack-node-externals": "^1.6.0"
   },
   "dependencies": {
-    "@ethercast/backend-model": "0.0.13",
+    "@ethercast/backend-model": "0.0.15",
     "@ethercast/calculate-signature": "0.0.1",
     "@ethercast/message-compressor": "0.0.0",
     "@ethercast/model": "0.0.16",
