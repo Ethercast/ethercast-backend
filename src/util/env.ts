@@ -16,6 +16,5 @@ export const GET_ABIS_LAMBDA_NAME: string = env.get('GET_ABIS_LAMBDA_NAME').requ
 export const LOG_QUEUE_NAME: string = env.get('LOG_QUEUE_NAME').required().asString();
 export const TX_QUEUE_NAME: string = env.get('TX_QUEUE_NAME').required().asString();
 
-export const TOKEN_ISSUER: string = env.get('TOKEN_ISSUER').required().asUrlString();
-export const TOKEN_AUDIENCE: string = env.get('TOKEN_AUDIENCE').required().asUrlString();
-export const TOKEN_SECRET: string = env.get('TOKEN_SECRET').required().asString();
+export const TOKEN_ISSUER: string = env.get('TOKEN_ISSUER').required().asString();
+export const TOKEN_AUDIENCE: string = env.get('TOKEN_AUDIENCE').required().asString();

@@ -2,11 +2,9 @@ import * as DynamoDB from 'aws-sdk/clients/dynamodb';
 import * as jwt from 'jsonwebtoken';
 import * as jwkToPem from 'jwk-to-pem';
 import fetch from 'node-fetch';
-import { ApiKeyStatus } from '@ethercast/backend-model';
 import {
   TOKEN_ISSUER,
   TOKEN_AUDIENCE,
-  TOKEN_SECRET
 } from '../util/env';
 import logger from '../util/logger';
 import ApiKeyCrud from '../util/api-key-crud';
@@ -89,50 +87,60 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
     };
   }
 
-  if (event.authorizationToken) {
+  async function authorizeApiKey(apiSey: string, apiSecret: string) {
+    const key = await crud.get(apiKey);
+
+    if (!key || key.secret !== apiSecret) {
+      if (!key) {
+        logger.info({ key }, 'API key not found');
+      } else {
+        logger.error({ key }, 'API key/secret mismatch');
+      }
+      unauthorized();
+    } else {
+      const { user, scopes } = key;
+      logger.info({ user, scopes }, 'Authorized API Key');
+      authorized(user, scopes.join(' '));
+    }
+  }
+
+  async function authorizeJwt(bearerToken: string) {
     // Remove 'bearer ' from token:
-    const token = event.authorizationToken.substring(7);
+    const token = authorization.substring(7);
 
     try {
-      const { iss } = jwt.decode(token) as any;
+      // Make a request to the iss + .well-known/jwks.json URL:
+      const jwts = await getJwks();
 
-      if (iss === TOKEN_AUDIENCE) {
-        jwt.verify(token, TOKEN_SECRET, jwtCb(async ({ jti, tenant, scope }) => {
-          logger.info({ tenant, scope }, 'Authorized tenant');
-          const key = await crud.get(jti);
-          if (!key || key.status !== ApiKeyStatus.active) {
-            logger.info({ err: 'Inactive api key' }, 'Unauthorized tenant');
-            unauthorized();
-          } else {
-            logger.info({ tenant, scope }, 'Authorized tenant');
-            authorized(tenant, scope);
-          }
-        }));
-      }
+      const k = jwts.keys[ 0 ];
+      const { kty, n, e } = k;
 
-      if (iss === TOKEN_ISSUER) {
-        // Make a request to the iss + .well-known/jwks.json URL:
-        const jwts = await getJwks();
+      const jwkArray = { kty, n, e };
 
-        const k = jwts.keys[ 0 ];
-        const { kty, n, e } = k;
+      const pem = jwkToPem(jwkArray);
 
-        const jwkArray = { kty, n, e };
-
-        const pem = jwkToPem(jwkArray);
-
-        // Verify the token:
-        jwt.verify(token, pem, { issuer, audience }, jwtCb(({ sub, scope }) => {
-          logger.info({ sub, scope }, 'Authorized user');
-          authorized(sub, scope);
-        }));
-      }
+      // Verify the token:
+      jwt.verify(token, pem, { issuer, audience }, jwtCb(({ sub, scope }) => {
+        logger.info({ sub, scope }, 'Authorized user');
+        authorized(sub, scope);
+      }));
     } catch (err) {
-      logger.error({ err }, 'failed to authorize user');
+      logger.error({ err }, 'failed to authorize bearer token');
       unauthorized();
     }
+  }
+
+  event.headers = event.headers || {};
+  const apiKey = event.headers['x-api-key'] || event.headers['X-Api-Key'];
+  const apiSecret = event.headers['x-api-secret'] || event.headers['X-Api-Secret'];
+  const authorization = event.headers.authorization || event.headers.Authorization;
+
+  if (apiKey) {
+    authorizeApiKey(apiKey, apiSecret);
+  } else if (authorization) {
+    authorizeJwt(authorization);
   } else {
-    logger.info('No authorizationToken found in the header.');
+    logger.info('Missing authorization.');
     unauthorized();
   }
 };
