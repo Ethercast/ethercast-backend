@@ -18,11 +18,11 @@ export const handle = createApiGatewayHandler(
       );
     }
 
-    logger.info({ key }, 'deleting api key');
+    logger.info({ key: key.id }, 'deleting api key');
 
     const saved = await crud.delete(key.id);
 
-    logger.info({ key }, `deleted api key `);
+    logger.info({ key: key.id }, `deleted api key `);
 
     return { statusCode: 200 };
   }
