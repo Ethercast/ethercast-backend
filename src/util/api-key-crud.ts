@@ -34,14 +34,16 @@ export default class ApiKeyCrud {
     const id = uuid.v4();
     const secret = await generateSecret(64);
 
-    const saved: ApiKey = await this.client.put({
+    const apiKey: ApiKey = { id, secret, name, scopes, user };
+
+    await this.client.put({
       TableName: API_KEYS_TABLE,
-      Item: { id, secret, name, scopes, user }
-    }).promise() as any;
+      Item: apiKey
+    }).promise();
 
-    this.logger.info({ saved }, 'api key created');
+    this.logger.info({ saved: apiKey }, 'api key created');
 
-    return saved;
+    return apiKey;
   }
 
   async get(id: string): Promise<ApiKey|null> {
