@@ -78,6 +78,8 @@ provider:
     LOG_QUEUE_NAME: ${self:custom.logQueueName}
     TX_QUEUE_NAME: ${self:custom.txQueueName}
     GET_ABIS_LAMBDA_NAME: ${self:custom.getAbisLambdaName}
+    TOKEN_ISSUER: ${self:custom.tokenIssuer}
+    TOKEN_AUDIENCE: ${self:custom.tokenAudience}
   iamRoleStatements:
     - Effect: Allow
       Action:
