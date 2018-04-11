@@ -130,10 +130,14 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
     }
   }
 
-  event.headers = event.headers || {};
-  const apiKey = event.headers['x-api-key'] || event.headers['X-Api-Key'];
-  const apiSecret = event.headers['x-api-secret'] || event.headers['X-Api-Secret'];
-  const authorization = event.headers.authorization || event.headers.Authorization;
+  // ignore header casing
+  const headers = Object.keys(event.headers).reduce((headers, header) => {
+    headers[header.toLowerCase()] = event.headers[header];
+    return headers;
+  }, {} as any);
+  const apiKey = headers['x-api-key'];
+  const apiSecret = headers['x-api-secret'];
+  const authorization = headers.authorization;
 
   if (apiKey) {
     authorizeApiKey(apiKey, apiSecret);
