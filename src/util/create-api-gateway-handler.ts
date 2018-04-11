@@ -96,6 +96,7 @@ export default function createApiGatewayHandler(requiredScopes: Scope[], handler
             `The following scopes were missing from the access token: ${missingScopes.join('; ')}`
           )
         );
+        return;
       }
     }
 
