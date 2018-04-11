@@ -87,27 +87,7 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
     };
   }
 
-  async function authorizeApiKey(apiSey: string, apiSecret: string) {
-    const key = await crud.get(apiKey);
-
-    if (!key || key.secret !== apiSecret) {
-      if (!key) {
-        logger.info({ key }, 'API key not found');
-      } else {
-        logger.error({ key }, 'API key/secret mismatch');
-      }
-      unauthorized();
-    } else {
-      const { user, scopes } = key;
-      logger.info({ user, scopes }, 'Authorized API Key');
-      authorized(user, scopes.join(' '));
-    }
-  }
-
-  async function authorizeJwt(bearerToken: string) {
-    // Remove 'bearer ' from token:
-    const token = authorization.substring(7);
-
+  async function authorizeBearer(token: string) {
     try {
       // Make a request to the iss + .well-known/jwks.json URL:
       const jwts = await getJwks();
@@ -130,21 +110,39 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
     }
   }
 
+  async function authorizeToken(token: string) {
+    const key = await crud.get(token);
+
+    if (!key) {
+      logger.info({ key }, 'API key not found');
+      unauthorized();
+    } else {
+      const { user, scopes } = key;
+      logger.info({ user, scopes }, 'Authorized API Key');
+      authorized(user, scopes.join(' '));
+    }
+  }
+
   // ignore header casing
   const headers = Object.keys(event.headers).reduce((headers, header) => {
     headers[header.toLowerCase()] = event.headers[header];
     return headers;
   }, {} as any);
-  const apiKey = headers['x-api-key'];
-  const apiSecret = headers['x-api-secret'];
-  const authorization = headers.authorization;
 
-  if (apiKey) {
-    authorizeApiKey(apiKey, apiSecret);
-  } else if (authorization) {
-    authorizeJwt(authorization);
-  } else {
+  const authorization = headers.authorization;
+  if (!authorization) {
     logger.info('Missing authorization.');
+    unauthorized();
+    return;
+  }
+
+  const [type, credentials] = authorization.split();
+  if (type.toLowerCase() === 'bearer') {
+    authorizeBearer(credentials);
+  } else if (type.toLowerCase() === 'token') {
+    authorizeToken(credentials);
+  } else {
+    logger.info('Missing valid authorization type.');
     unauthorized();
   }
 };
