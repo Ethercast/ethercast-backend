@@ -171,7 +171,8 @@ functions:
           path: api-keys
           authorizer:
             name: auth
-            resultTtlInSeconds: 300
+            identitySource: ''
+            resultTtlInSeconds: 0
             type: request
           cors:
             origin: '*'
@@ -193,7 +194,8 @@ functions:
           path: api-keys
           authorizer:
             name: auth
-            resultTtlInSeconds: 300
+            identitySource: ''
+            resultTtlInSeconds: 0
             type: request
           cors:
             origin: '*'
@@ -215,7 +217,8 @@ functions:
           path: api-keys/{id}
           authorizer:
             name: auth
-            resultTtlInSeconds: 300
+            identitySource: ''
+            resultTtlInSeconds: 0
             type: request
           cors:
             origin: '*'
@@ -237,7 +240,8 @@ functions:
           path: subscriptions
           authorizer:
             name: auth
-            resultTtlInSeconds: 300
+            identitySource: ''
+            resultTtlInSeconds: 0
             type: request
           cors:
             origin: '*'
@@ -259,7 +263,8 @@ functions:
           path: subscriptions/{id}/receipts
           authorizer:
             name: auth
-            resultTtlInSeconds: 300
+            identitySource: ''
+            resultTtlInSeconds: 0
             type: request
           cors:
             origin: '*'
@@ -281,7 +286,8 @@ functions:
           path: subscriptions/{id}
           authorizer:
             name: auth
-            resultTtlInSeconds: 300
+            identitySource: ''
+            resultTtlInSeconds: 0
             type: request
           cors:
             origin: '*'
@@ -303,7 +309,8 @@ functions:
           path: subscriptions
           authorizer:
             name: auth
-            resultTtlInSeconds: 300
+            identitySource: ''
+            resultTtlInSeconds: 0
             type: request
           cors:
             origin: '*'
@@ -325,7 +332,8 @@ functions:
           path: subscriptions/{id}
           authorizer:
             name: auth
-            resultTtlInSeconds: 300
+            identitySource: ''
+            resultTtlInSeconds: 0
             type: request
           cors:
             origin: '*'
@@ -347,7 +355,8 @@ functions:
           path: get-examples
           authorizer:
             name: auth
-            resultTtlInSeconds: 300
+            identitySource: ''
+            resultTtlInSeconds: 0
             type: request
           cors:
             origin: '*'
