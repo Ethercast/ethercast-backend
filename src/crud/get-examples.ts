@@ -18,7 +18,7 @@ import { createExampleLog, createExampleTransaction, EMPTY_LOG, EMPTY_TRANSACTIO
 
 const lambda = new Lambda();
 
-async function getAbis(addresses: string[]): Promise<{ [ address: string ]: Abi | null }> {
+async function getAbis(addresses: string[]): Promise<{ abis: { [ address: string ]: Abi | null } }> {
   const invocationRequest: InvocationRequest = {
     InvocationType: 'RequestResponse',
     FunctionName: GET_ABIS_LAMBDA_NAME,
@@ -96,7 +96,7 @@ export const handle = createApiGatewayHandler(
 
           return { statusCode: 200, body: EMPTY_TRANSACTION };
         } else {
-          const abis = await getAbis(addresses);
+          const { abis } = await getAbis(addresses);
 
           logger.debug({ addresses, abis }, 'fetched abis for addresses');
 
@@ -113,9 +113,9 @@ export const handle = createApiGatewayHandler(
 
           return { statusCode: 200, body: EMPTY_LOG };
         } else {
-          const abis = await getAbis(addresses);
+          const { abis } = await getAbis(addresses);
 
-          logger.debug({ abis, addresses }, 'fetched abis for addresses');
+          logger.debug({ addresses, abis }, 'fetched abis for addresses');
 
           return { statusCode: 200, body: createExampleLog(abis) };
         }
