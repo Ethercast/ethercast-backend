@@ -6,7 +6,6 @@ import {
   SubscriptionType,
   TransactionSubscriptionFilters
 } from '@ethercast/backend-model';
-import { DecodedLog, Log, Transaction } from '@ethercast/model';
 import * as Lambda from 'aws-sdk/clients/lambda';
 import { InvocationRequest } from 'aws-sdk/clients/lambda';
 import * as Joi from 'joi';
@@ -14,7 +13,7 @@ import * as _ from 'underscore';
 import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway-handler';
 import { GET_ABIS_LAMBDA_NAME } from '../util/env';
 import logger from '../util/logger';
-import { Abi, ContractMember } from '../debt/etherscan-model';
+import { Abi } from '../debt/etherscan-model';
 import { createExampleLog, createExampleTransaction, EMPTY_LOG, EMPTY_TRANSACTION } from '../util/create-examples';
 
 const lambda = new Lambda();
