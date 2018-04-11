@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import { createExampleLog, createExampleTransaction, EMPTY_LOG, EMPTY_TRANSACTION } from '../src/util/create-examples';
 import * as cryptoKittiesAbi from './cryptokitties-core-abi.json';
 import * as etherdeltaAbi from './etherdelta-abi.json';
+import * as priceFeedAbi from './price-feed-abis.json';
 
 describe('#createExampleLog', () => {
   it('returns an empty log by default', () => {
@@ -82,6 +83,20 @@ describe('#createExampleLog', () => {
           'tokenId': 'uint256',
           'user': 'address',
           'v': 'uint8'
+        }
+      }
+    });
+  });
+
+  it('works for broken kovan abi', () => {
+    expect(createExampleLog(priceFeedAbi))
+      .to.deep.eq({
+      ...EMPTY_LOG,
+      'ethercast': {
+        'eventName': 'PriceUpdated',
+        'parameters': {
+          '0': 'uint256',
+          'timestamp': 'uint256'
         }
       }
     });

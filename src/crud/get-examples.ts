@@ -38,7 +38,6 @@ async function getAbis(addresses: string[]): Promise<{ [ address: string ]: Abi 
   return JSON.parse(Payload.toString());
 }
 
-
 const RequestBody = Joi.object({
   type: Joi.string().valid(_.values(SubscriptionType)),
   filters: Joi.object().when(
@@ -48,7 +47,7 @@ const RequestBody = Joi.object({
       then: JoiSubscriptionTransactionFilter,
       otherwise: JoiSubscriptionLogFilter
     }
-  )
+  ).required()
 });
 
 interface Request {
@@ -93,9 +92,13 @@ export const handle = createApiGatewayHandler(
         const addresses = toArray(to);
 
         if (addresses.length === 0) {
+          logger.debug({ addresses }, 'no addresses, returning empty transaction');
+
           return { statusCode: 200, body: EMPTY_TRANSACTION };
         } else {
           const abis = await getAbis(addresses);
+
+          logger.debug({ addresses, abis }, 'fetched abis for addresses');
 
           return { statusCode: 200, body: createExampleTransaction(abis) };
         }
@@ -104,10 +107,15 @@ export const handle = createApiGatewayHandler(
         const { filters: { address, topic0 } } = request;
 
         const addresses = toArray(address);
+
         if (addresses.length === 0) {
+          logger.debug('no addresses, returning empty log');
+
           return { statusCode: 200, body: EMPTY_LOG };
         } else {
           const abis = await getAbis(addresses);
+
+          logger.debug({ abis, addresses }, 'fetched abis for addresses');
 
           return { statusCode: 200, body: createExampleLog(abis) };
         }
