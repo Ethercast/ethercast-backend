@@ -6,6 +6,7 @@ import {
   SubscriptionType,
   TransactionSubscription
 } from '@ethercast/backend-model';
+import { DecodedLog } from '@ethercast/model';
 import _ = require('underscore');
 
 const EXAMPLE_ACTIVE_LOG_SUB: LogSubscription = {
@@ -48,6 +49,32 @@ const EXAMPLE_DEACTIVATED_TX_SUB: TransactionSubscription = {
   status: SubscriptionStatus.deactivated
 };
 
+const KITTY_TRANSFER_LOG: DecodedLog = {
+  'address': '0x06012c8cf97bead5deae237070f9587f8e7a266d',
+  'topics': [
+    '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+  ],
+  'data': '0x000000000000000000000000b1690c08e213a35ed9bab7b318de14420fb57d8c00000000000000000000000095d459dc61fddde33b76af9d0fcbfca9217a550500000000000000000000000000000000000000000000000000000000000a2364',
+  'blockNumber': '0x52af94',
+  'transactionHash': '0x60610ab9a774a7f55491d6c7ba87bf0add702853e5ff13663f8cb91395110e29',
+  'transactionIndex': '0x69',
+  'blockHash': '0x94ef5f3107f088f9595bdb9138a9eb10c143c57d4aea7e18b4ff27972cb5d325',
+  'logIndex': '0x3d',
+  'removed': false,
+  'ethercast': {
+    'eventName': 'Transfer',
+    'parameters': {
+      '0': '0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C',
+      '1': '0x95d459Dc61FddDE33b76Af9d0FcbFca9217A5505',
+      '2': '664420',
+      '__length__': 3,
+      'from': '0xb1690C08E213a35Ed9bAb7B318DE14420FB57d8C',
+      'to': '0x95d459Dc61FddDE33b76Af9d0FcbFca9217A5505',
+      'tokenId': '664420'
+    }
+  }
+};
+
 
 describe('#subscriptionMatches', () => {
   it('matches if we fail to understand the message', () => {
@@ -70,12 +97,39 @@ describe('#subscriptionMatches', () => {
 
   it('matches cryptokitty log', () => {
     expect(
-      subscriptionMatches(
-        EXAMPLE_ACTIVE_LOG_SUB,
-        JSON.stringify({
-          // TODO: define a matching log here
-        })
-      )
+      subscriptionMatches(EXAMPLE_ACTIVE_LOG_SUB, JSON.stringify(KITTY_TRANSFER_LOG))
+    ).to.be.true;
+
+    expect(
+      subscriptionMatches(EXAMPLE_DEACTIVATED_LOG_SUB, JSON.stringify(KITTY_TRANSFER_LOG))
+    ).to.be.false;
+  });
+
+  it('kitty log matches tx sub bc it is not a tx', () => {
+    expect(
+      subscriptionMatches(EXAMPLE_ACTIVE_TX_SUB, JSON.stringify(KITTY_TRANSFER_LOG))
+    ).to.be.true;
+
+    expect(
+      subscriptionMatches(EXAMPLE_DEACTIVATED_TX_SUB, JSON.stringify(KITTY_TRANSFER_LOG))
+    ).to.be.false;
+  });
+
+  it('case insensitive match', () => {
+    expect(
+      subscriptionMatches(EXAMPLE_ACTIVE_LOG_SUB, JSON.stringify({
+        ...KITTY_TRANSFER_LOG,
+        address: KITTY_TRANSFER_LOG.address.toUpperCase()
+      }))
+    ).to.be.true;
+  });
+
+  it('fails with different address', () => {
+    expect(
+      subscriptionMatches(EXAMPLE_ACTIVE_LOG_SUB, JSON.stringify({
+        ...KITTY_TRANSFER_LOG,
+        address: KITTY_TRANSFER_LOG.address + 'a'
+      }))
     ).to.be.true;
   });
 });
