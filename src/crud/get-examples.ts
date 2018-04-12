@@ -1,20 +1,17 @@
 import {
-  FilterOptionValue,
-  JoiSubscriptionLogFilter,
-  JoiSubscriptionTransactionFilter,
-  LogSubscriptionFilters,
-  SubscriptionType,
-  TransactionSubscriptionFilters
+  GetExampleLogRequest,
+  GetExampleTransactionRequest,
+  JoiGetExampleRequest,
+  SubscriptionType
 } from '@ethercast/backend-model';
 import * as Lambda from 'aws-sdk/clients/lambda';
 import { InvocationRequest } from 'aws-sdk/clients/lambda';
-import * as Joi from 'joi';
-import * as _ from 'underscore';
 import createApiGatewayHandler, { simpleError } from '../util/create-api-gateway-handler';
 import { GET_ABIS_LAMBDA_NAME } from '../util/env';
 import logger from '../util/logger';
 import { Abi } from '../debt/etherscan-model';
 import { createExampleLog, createExampleTransaction, EMPTY_LOG, EMPTY_TRANSACTION } from '../util/create-examples';
+import filterOptionValueToArray from '../util/filter-option-value-to-array';
 
 const lambda = new Lambda();
 
@@ -38,58 +35,24 @@ async function getAbis(addresses: string[]): Promise<{ abis: { [ address: string
   return JSON.parse(Payload.toString());
 }
 
-const RequestBody = Joi.object({
-  type: Joi.string().valid(_.values(SubscriptionType)),
-  filters: Joi.object().when(
-    'type',
-    {
-      is: SubscriptionType.transaction,
-      then: JoiSubscriptionTransactionFilter,
-      otherwise: JoiSubscriptionLogFilter
-    }
-  ).required()
-});
-
-interface Request {
-  type: SubscriptionType
-}
-
-interface TransactionRequest extends Request {
-  type: SubscriptionType.transaction,
-  filters: TransactionSubscriptionFilters
-}
-
-interface LogRequest extends Request {
-  type: SubscriptionType.log,
-  filters: LogSubscriptionFilters
-}
-
-function toArray(value?: FilterOptionValue): string[] {
-  if (typeof value === 'undefined' || value === null) {
-    return [];
-  } else if (typeof value === 'string') {
-    return [ value ];
-  } else {
-    return value;
-  }
-}
 
 export const handle = createApiGatewayHandler(
   [],
   async ({ body, user }) => {
-    const { value, error } = RequestBody.validate(body);
+    const { value, error } = JoiGetExampleRequest.validate(body);
 
     if (error) {
       return simpleError(400, `Invalid subscription request: ${error.message}`);
     }
 
-    const request = value as any as TransactionRequest | LogRequest;
+    const request = value as any as GetExampleTransactionRequest | GetExampleLogRequest;
 
     switch (request.type) {
       case SubscriptionType.transaction: {
-        const { filters: { methodSignature, from, to } } = request;
+        const { filters: { to } } = request;
 
-        const addresses = toArray(to);
+        // TODO: filter by methods that match the method signature of the request
+        const addresses = filterOptionValueToArray(to);
 
         if (addresses.length === 0) {
           logger.debug({ addresses }, 'no addresses, returning empty transaction');
@@ -104,9 +67,10 @@ export const handle = createApiGatewayHandler(
         }
       }
       case SubscriptionType.log: {
-        const { filters: { address, topic0 } } = request;
+        const { filters: { address } } = request;
 
-        const addresses = toArray(address);
+        // TODO: filter by events matching topic0 of the request
+        const addresses = filterOptionValueToArray(address);
 
         if (addresses.length === 0) {
           logger.debug('no addresses, returning empty log');
