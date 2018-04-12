@@ -136,13 +136,12 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
     return;
   }
 
-  const [type, credentials] = authorization.split();
-  if (type.toLowerCase() === 'bearer') {
-    authorizeBearer(credentials);
-  } else if (type.toLowerCase() === 'token') {
-    authorizeToken(credentials);
-  } else {
-    logger.info('Missing valid authorization type.');
-    unauthorized();
+  const [type, token] = authorization.split(' ');
+  switch (type.toLowerCase()) {
+    case 'bearer': authorizeBearer(token); break;
+    case 'token': authorizeToken(token); break;
+    default:
+      logger.info({type}, 'Missing valid authorization type.');
+      unauthorized();
   }
 };
