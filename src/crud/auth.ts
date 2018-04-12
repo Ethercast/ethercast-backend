@@ -110,14 +110,18 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
     }
   }
 
-  async function authorizeToken(token: string) {
-    const key = await crud.get(token);
+  async function authorizeApiKey(token: string) {
+    const [ key, secret ] = token.split(':');
+    const retrievedKey = await crud.get(key);
 
-    if (!key) {
+    if (!retrievedKey) {
       logger.info({ key }, 'API key not found');
       unauthorized();
+    } else if (retrievedKey.secret !== secret) {
+      logger.info({ key }, 'API secret does not match');
+      unauthorized();
     } else {
-      const { user, scopes } = key;
+      const { user, scopes } = retrievedKey;
       logger.info({ user, scopes }, 'Authorized API Key');
       authorized(user, scopes.join(' '));
     }
@@ -136,10 +140,10 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
     return;
   }
 
-  const [type, token] = authorization.split(' ');
+  const [ type, token ] = authorization.split(' ');
   switch (type.toLowerCase()) {
     case 'bearer': authorizeBearer(token); break;
-    case 'token': authorizeToken(token); break;
+    case 'api-key': authorizeApiKey(token); break;
     default:
       logger.info({type}, 'Missing valid authorization type.');
       unauthorized();
