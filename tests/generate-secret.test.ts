@@ -18,6 +18,6 @@ describe('#generateSecret', () => {
   it('is alphanumeric', async () => {
     const hex = await generateSecret(64);
 
-    expect(Joi.string().validate(hex).error).to.be.null;
+    expect(Joi.string().regex(/^[a-z0-9]+$/i).validate(hex).error).to.be.null;
   });
 });

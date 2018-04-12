@@ -10,6 +10,7 @@ import SnsSubscriptionUtil from '../util/sns-subscription-util';
 import * as Lambda from 'aws-sdk/clients/lambda';
 import { parseMessage } from '@ethercast/message-compressor';
 import { calculateMessageSignature, SignatureVersion } from '@ethercast/calculate-signature';
+import subscriptionMatches from '../util/subscription-matches';
 
 const client = new DynamoDB.DocumentClient();
 const sns = new SNS();
@@ -72,9 +73,16 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
   }
 }
 
-async function sendLogNotification(crud: SubscriptionCrud, subscriptionArn: string, message: string) {
+async function sendNotification(crud: SubscriptionCrud, subscriptionArn: string, message: string): Promise<void> {
   const subscription: Subscription = await crud.getByArn(subscriptionArn);
+
+  // Double-check that the message matches this subscription before sending any notifications.
+  if (!subscriptionMatches(subscription, message)) {
+    return;
+  }
+
   const receipt = await notifyEndpoint(crud, subscription, message);
+
   await crud.saveReceipt(subscription, receipt);
 }
 
@@ -108,7 +116,7 @@ export const handle: Handler = async (event: SNSEvent, context: Context) => {
     try {
       const parsed = JSON.stringify(parseMessage(Message));
 
-      await sendLogNotification(crud, EventSubscriptionArn, parsed);
+      await sendNotification(crud, EventSubscriptionArn, parsed);
     } catch (err) {
       logger.error({ err, record: value.Records[ i ] }, 'failed to send log notification');
       context.fail(new Error('failed to send a notification'));

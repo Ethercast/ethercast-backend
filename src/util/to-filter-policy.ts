@@ -1,9 +1,9 @@
 import { FilterOptionValue, LogSubscriptionFilters, TransactionSubscriptionFilters } from '@ethercast/backend-model';
 import _ = require('underscore');
 
-type FilterPolicy = {
-  [key: string]: string[];
-};
+export interface FilterPolicy {
+  [ messageAttribute: string ]: string[];
+}
 
 export default function toFilterPolicy(filter: LogSubscriptionFilters | TransactionSubscriptionFilters): FilterPolicy {
   return _.mapObject(
