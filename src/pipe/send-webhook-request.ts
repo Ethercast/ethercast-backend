@@ -78,6 +78,7 @@ async function sendNotification(crud: SubscriptionCrud, subscriptionArn: string,
 
   // Double-check that the message matches this subscription before sending any notifications.
   if (!subscriptionMatches(subscription, message)) {
+    logger.warn({ subscription, message }, 'skipping message');
     return;
   }
 

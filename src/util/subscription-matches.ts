@@ -1,4 +1,10 @@
-import { LogSubscription, Subscription, SubscriptionType, TransactionSubscription } from '@ethercast/backend-model';
+import {
+  LogSubscription,
+  Subscription,
+  SubscriptionStatus,
+  SubscriptionType,
+  TransactionSubscription
+} from '@ethercast/backend-model';
 import { JoiLog, JoiTransaction, Log, Transaction } from '@ethercast/model';
 import { MessageAttributeMap } from 'aws-sdk/clients/sns';
 import toTxMessageAttributes from './to-tx-message-attributes';
@@ -25,32 +31,30 @@ function isLog(parsed: any): parsed is Log {
 function messageAttributesMatchFilterPolicy(messageAttributes: MessageAttributeMap, filterPolicy: FilterPolicy): boolean {
   return _.all(
     filterPolicy,
-    (matchingValues, attribute) => {
+    (policyValues, attribute) => {
       const messageAttribute = messageAttributes[ attribute ];
 
       if (!messageAttribute) {
         return false;
       }
 
-      const { StringValue } = messageAttribute;
+      const { StringValue: messageAttributeValue } = messageAttribute;
 
-      if (!StringValue) {
+      if (!messageAttributeValue) {
         return false;
       }
 
-      return (
-        _.any(
-          matchingValues,
-          matchingValue => {
-            return StringValue === matchingValue;
-          }
-        )
-      );
+      return _.any(policyValues, policyValue => messageAttributeValue === policyValue);
     }
   );
 }
 
 export default function subscriptionMatches(sub: Subscription, message: string): boolean {
+  // deactivated subscriptions should not receive messages
+  if (sub.status === SubscriptionStatus.deactivated) {
+    return false;
+  }
+
   let parsed: any;
 
   try {
