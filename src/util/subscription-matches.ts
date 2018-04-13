@@ -21,11 +21,11 @@ function isLogSubscription(sub: Subscription): sub is LogSubscription {
 }
 
 function isTransaction(parsed: any): parsed is Transaction {
-  return JoiTransaction.validate(parsed).error === null;
+  return JoiTransaction.validate(parsed, { allowUnknown: true }).error === null;
 }
 
 function isLog(parsed: any): parsed is Log {
-  return JoiLog.validate(parsed).error === null;
+  return JoiLog.validate(parsed, { allowUnknown: true }).error === null;
 }
 
 function messageAttributesMatchFilterPolicy(messageAttributes: MessageAttributeMap, filterPolicy: FilterPolicy): boolean {
@@ -73,6 +73,7 @@ export default function subscriptionMatches(sub: Subscription, message: string):
   } else {
     return true;
   }
+
 
   const filterPolicy = toFilterPolicy(sub.filters);
 

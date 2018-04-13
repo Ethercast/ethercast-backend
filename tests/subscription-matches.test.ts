@@ -8,6 +8,8 @@ import {
 } from '@ethercast/backend-model';
 import { DecodedLog } from '@ethercast/model';
 import _ = require('underscore');
+import toLogMessageAttributes from '../src/util/to-log-message-attributes';
+import toFilterPolicy from '../src/util/to-filter-policy';
 
 const EXAMPLE_ACTIVE_LOG_SUB: LogSubscription = {
   'secret': 'abc',
@@ -75,6 +77,33 @@ const KITTY_TRANSFER_LOG: DecodedLog = {
   }
 };
 
+const LOG_EXAMPLE_FAILED = {
+  'address': '0xef68e7c694f40c8202821edf525de3782458639f',
+  'topics': [
+    '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+    '0x0000000000000000000000000574f22b83b87ea19e200613e82fa9b0a5ae018b',
+    '0x00000000000000000000000005ee546c1a62f90d7acbffd6d846c9c54c7cf94c'
+  ],
+  'data': '0x000000000000000000000000000000000000000000000125cd725332e0920000',
+  'blockNumber': '0x52dcaa',
+  'transactionHash': '0x0db2f38a1db45850c617f573c449010524c736655fa7eb4841ae1c93597ebc07',
+  'transactionIndex': '0x51',
+  'blockHash': '0x900b1989b72cfb3fad1702301e903afcc367b4fba337780ec3e6473dca18822c',
+  'logIndex': '0x1e',
+  'removed': false,
+  'ethercast': {
+    'eventName': 'Transfer',
+    'parameters': {
+      '0': '0xFC378dAA952ba7f163c4a11628f55a4df523b3EF',
+      '1': '0x0574F22b83b87eA19E200613E82FA9b0a5aE018B',
+      '2': '5419700000000000000000',
+      '__length__': 3,
+      'from': '0xFC378dAA952ba7f163c4a11628f55a4df523b3EF',
+      'to': '0x0574F22b83b87eA19E200613E82FA9b0a5aE018B',
+      'value': '5419700000000000000000'
+    }
+  }
+};
 
 describe('#subscriptionMatches', () => {
   it('matches if we fail to understand the message', () => {
@@ -131,5 +160,11 @@ describe('#subscriptionMatches', () => {
         address: KITTY_TRANSFER_LOG.address + 'a'
       }))
     ).to.be.true;
+  });
+
+  it.only('fails with example log', () => {
+    expect(
+      subscriptionMatches(EXAMPLE_ACTIVE_LOG_SUB, JSON.stringify(LOG_EXAMPLE_FAILED))
+    ).to.be.false;
   });
 });
