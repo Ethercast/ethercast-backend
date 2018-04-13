@@ -162,7 +162,7 @@ describe('#subscriptionMatches', () => {
     ).to.be.true;
   });
 
-  it.only('fails with example log', () => {
+  it('fails with example log', () => {
     expect(
       subscriptionMatches(EXAMPLE_ACTIVE_LOG_SUB, JSON.stringify(LOG_EXAMPLE_FAILED))
     ).to.be.false;
