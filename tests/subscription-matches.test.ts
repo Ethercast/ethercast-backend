@@ -105,6 +105,34 @@ const LOG_EXAMPLE_FAILED = {
   }
 };
 
+const EXAMPLE_TX_SUCCEEDS_MULTI = {
+  'blockHash': '0x92179d3b27453d6c02eb3a63c8d8d6af7dde50f6e4d74cc26586115850e2dd67',
+  'blockNumber': '0x52dc8a',
+  'from': '0x99fe5d6383289cdd56e54fc0baf7f67c957a8888',
+  'gas': '0x1046a',
+  'gasPrice': '0xf5de81400',
+  'hash': '0x5864b1fc4afd20178f00fff868f2b1e0e48b583ddcd1eeaf070d8bd6cc9b2ab4',
+  'input': '0xa9059cbb000000000000000000000000300987eddf133482c045cfd11a6aab204a315acb00000000000000000000000000000000000000000000000ad1de1f86e0370000',
+  'nonce': '0x339c',
+  'to': '0x86fa049857e0209aa7d9e616f7eb3b3b78ecfdb0',
+  'transactionIndex': '0x4',
+  'value': '0x0',
+  'v': '0x26',
+  'r': '0xe164ff2d9b099019f4ccf38d5c2abb2fd2c49d2ce526942af5c7a2a4e2569fdf',
+  's': '0x20c917c68ba185dc4e5d6e6c6240b2e528c9b68082c9b2cd780a5403761f52b7',
+  'ethercast': {
+    'methodName': 'transfer',
+    'parameters': {
+      '0': '0x300987eDdF133482c045cFD11a6aAB204a315aCb',
+      '1': '199590000000000000000',
+      '__length__': 2,
+      'dst': '0x300987eDdF133482c045cFD11a6aAB204a315aCb',
+      'wad': '199590000000000000000'
+    }
+  },
+  'removed': false
+};
+
 describe('#subscriptionMatches', () => {
   it('matches if we fail to understand the message', () => {
     _.each([ '{""}', 'red', 'blue', 'abc', '123', 'true', 'false' ], message => {
@@ -167,4 +195,35 @@ describe('#subscriptionMatches', () => {
       subscriptionMatches(EXAMPLE_ACTIVE_LOG_SUB, JSON.stringify(LOG_EXAMPLE_FAILED))
     ).to.be.false;
   });
+
+  it('succeeds with OR conditions', () => {
+    expect(
+      subscriptionMatches(
+        {
+          ...EXAMPLE_ACTIVE_TX_SUB,
+          filters: {
+            from: [ '0x99fe5d6383289cdd56e54fc0baf7f67c957a8888', '0x99fe5d6383289cdd56e54fc0baf7f67c957a8898' ],
+            to: [ '0x86fa049857e0209aa7d9e616f7eb3b3b78ecfdb0', '0x86fa049857e0209aa7d9e616f7eb3b3b78ecfdbf' ]
+          }
+        },
+        JSON.stringify(EXAMPLE_TX_SUCCEEDS_MULTI)
+      )
+    ).to.be.true;
+  });
+
+  it('fails with and conditions', () => {
+    expect(
+      subscriptionMatches(
+        {
+          ...EXAMPLE_ACTIVE_TX_SUB,
+          filters: {
+            from: [ '0x19fe5d6383289cdd56e54fc0baf7f67c957a8888', '0x99fe5d6383289cdd56e54fc0baf7f67c957a8898' ],
+            to: [ '0x86fa049857e0209aa7d9e616f7eb3b3b78ecfdb0', '0x86fa049857e0209aa7d9e616f7eb3b3b78ecfdbf' ]
+          }
+        },
+        JSON.stringify(EXAMPLE_TX_SUCCEEDS_MULTI)
+      )
+    ).to.be.false;
+  })
+
 });

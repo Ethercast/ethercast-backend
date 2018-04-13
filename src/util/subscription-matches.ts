@@ -49,7 +49,7 @@ function messageAttributesMatchFilterPolicy(messageAttributes: MessageAttributeM
   );
 }
 
-export default function subscriptionMatches(sub: Subscription, message: string): boolean {
+export default function subscriptionMatches<T extends Subscription>(sub: T, message: string): boolean {
   // deactivated subscriptions should not receive messages
   if (sub.status === SubscriptionStatus.deactivated) {
     return false;
