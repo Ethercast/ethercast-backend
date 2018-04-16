@@ -74,7 +74,19 @@ async function notifyEndpoint(crud: SubscriptionCrud, subscription: Subscription
 }
 
 async function sendNotification(crud: SubscriptionCrud, subscriptionArn: string, message: string): Promise<void> {
-  const subscription: Subscription = await crud.getByArn(subscriptionArn);
+  let subscription: Subscription;
+
+  try {
+    subscription = await crud.getByArn(subscriptionArn);
+  } catch (err) {
+    // no matching arns!
+    if (err.message === 'no matching arns') {
+      logger.error('not sending notification due to no matching arns');
+      return;
+    } else {
+      throw err;
+    }
+  }
 
   // Double-check that the message matches this subscription before sending any notifications.
   if (!subscriptionMatches(subscription, message)) {
