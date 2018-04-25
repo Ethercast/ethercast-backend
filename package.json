@@ -9,8 +9,8 @@
   "scripts": {
     "test": "ts-mocha tests/**/*.test.ts",
     "deploy:dev": "sls deploy",
-    "deploy:mainnet": "sls deploy --stage mainnet",
-    "deploy:kovan": "sls deploy --stage kovan"
+    "deploy:mainnet": "sls deploy --stage mainnet --logLevel warn",
+    "deploy:kovan": "sls deploy --stage kovan --logLevel warn"
   },
   "devDependencies": {
     "@types/aws-lambda": "0.0.22",

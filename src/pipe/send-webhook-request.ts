@@ -79,9 +79,14 @@ async function sendNotification(crud: SubscriptionCrud, subscriptionArn: string,
   try {
     subscription = await crud.getByArn(subscriptionArn);
   } catch (err) {
-    // no matching arns!
+    // no matching arns! somehow the sns topic was not unsubscribed
     if (err.message === 'no matching arns') {
-      logger.error('not sending notification due to no matching arns');
+      try {
+        await sns.unsubscribe({ SubscriptionArn: subscriptionArn }).promise();
+        logger.warn({ subscriptionArn }, 'unsubscribed subscription arn');
+      } catch (err) {
+        logger.error({ err, subscriptionArn }, 'failed to unsubscribe arn');
+      }
       return;
     } else {
       throw err;
