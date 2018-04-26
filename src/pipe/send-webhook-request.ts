@@ -79,18 +79,8 @@ async function sendNotification(crud: SubscriptionCrud, subscriptionArn: string,
   try {
     subscription = await crud.getByArn(subscriptionArn);
   } catch (err) {
-    // no matching arns! somehow the sns topic was not unsubscribed
-    if (err.message === 'no matching arns') {
-      try {
-        await sns.unsubscribe({ SubscriptionArn: subscriptionArn }).promise();
-        logger.warn({ subscriptionArn }, 'unsubscribed subscription arn');
-      } catch (err) {
-        logger.error({ err, subscriptionArn }, 'failed to unsubscribe arn');
-      }
-      return;
-    } else {
-      throw err;
-    }
+    logger.warn({ err, subscriptionArn }, 'subscription arn does not exist in dynamo');
+    return;
   }
 
   // Double-check that the message matches this subscription before sending any notifications.
