@@ -28,6 +28,7 @@
     "aws-sdk": "^2.197.0",
     "chai": "^4.1.2",
     "mocha": "^4.1.0",
+    "serverless": "^1.31.0",
     "serverless-dynamodb-autoscaling": "^0.6.2",
     "serverless-pseudo-parameters": "^1.4.2",
     "serverless-webpack": "^4.0.0",
