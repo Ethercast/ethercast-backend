@@ -111,14 +111,14 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
   }
 
   async function authorizeApiKey(token: string) {
-    const [ key, secret ] = token.split(':');
-    const retrievedKey = await crud.get(key);
+    const [ keyId, secret ] = token.split(':');
+    const retrievedKey = await crud.get(keyId);
 
     if (!retrievedKey) {
-      logger.info({ key }, 'API key not found');
+      logger.info({ keyId }, 'API key not found');
       unauthorized();
     } else if (retrievedKey.secret !== secret) {
-      logger.info({ key }, 'API secret does not match');
+      logger.info({ keyId }, 'API secret does not match');
       unauthorized();
     } else {
       const { user, scopes } = retrievedKey;
@@ -129,23 +129,36 @@ module.exports.authorize = async (event: any, context: any, cb: any): Promise<vo
 
   // ignore header casing
   const headers = Object.keys(event.headers).reduce((headers, header) => {
-    headers[header.toLowerCase()] = event.headers[header];
+    headers[ header.toLowerCase() ] = event.headers[ header ];
     return headers;
   }, {} as any);
 
   const authorization = headers.authorization;
-  if (!authorization) {
-    logger.info('Missing authorization.');
+  if (typeof authorization !== 'string' || authorization.length === 0) {
+    logger.info('Missing authorization header');
     unauthorized();
     return;
   }
 
-  const [ type, token ] = authorization.split(' ');
+  const authSplit = authorization.split(' ');
+
+  if (authSplit.length !== 2) {
+    logger.info('Incorrect authorization header format');
+    unauthorized();
+    return;
+  }
+
+  const [ type, token ] = authSplit;
   switch (type.toLowerCase()) {
-    case 'bearer': authorizeBearer(token); break;
-    case 'api-key': authorizeApiKey(token); break;
+    case 'bearer':
+      await authorizeBearer(token);
+      break;
+    case 'api-key':
+      await authorizeApiKey(token);
+      break;
     default:
-      logger.info({type}, 'Missing valid authorization type.');
+      logger.info({ type }, 'Invalid authorization type given');
       unauthorized();
+      return;
   }
 };
